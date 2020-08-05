@@ -31,5 +31,7 @@ messageToAction (Message text) = case text of
   otherwise -> Echo text
 
 react :: Config -> Message -> [Message]
-react (Config { repeats }) (Message text)
-  = replicate repeats $ Message text
+react config message
+  = case messageToAction message of
+      Echo text -> replicate (repeats config) $ Message text
+      Help -> [Message $ helpText config]

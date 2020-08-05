@@ -10,6 +10,8 @@ spec = do
       let message = Message "Some text"
       react (defaultConfig { repeats = 1 }) message `shouldBe` [message]
       react (defaultConfig { repeats = 2 }) message `shouldBe` [message, message]
+    it "replies with the help message when it receives /help command" $ do
+      react defaultConfig (Message "/help") `shouldBe` [Message (helpText defaultConfig)]
 
   describe "Bot.messageToAction" $ do
     it "separates commands and regular messages" $ do
