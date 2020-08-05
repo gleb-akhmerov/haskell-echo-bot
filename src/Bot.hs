@@ -6,10 +6,17 @@ module Bot
     , Message(..)
     , react
     , messageToAction
+    , defaultConfig
     ) where
 
 
-data Config = Config { repeats :: Int }
+data Config = Config { repeats :: Int, helpText :: String }
+
+defaultConfig =
+  Config
+    { repeats = 1
+    , helpText = "This bot repeats the messages that you send it."
+    }
 
 data Message = Message String deriving (Show, Eq)
 

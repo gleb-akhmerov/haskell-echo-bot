@@ -1,6 +1,6 @@
 module Main where
 
-import Bot (react, Message(..), Config(..))
+import Bot (react, Message(..), defaultConfig)
 
 main :: IO ()
-main = print $ react (Config { repeats = 5 }) (Message "Echo me")
+main = print $ react defaultConfig (Message "Echo me")

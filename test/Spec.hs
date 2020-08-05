@@ -1,5 +1,5 @@
 import Test.Hspec
-import Bot (Action(..), Config(..), Message(..), messageToAction, react)
+import Bot (Action(..), Config(..), Message(..), defaultConfig, messageToAction, react)
 
 main = hspec spec
 
@@ -8,8 +8,8 @@ spec = do
   describe "Bot.react" $ do
     it "echoes any non-command message n times, n is configurable" $ do
       let message = Message "Some text"
-      react (Config { repeats = 1 }) message `shouldBe` [message]
-      react (Config { repeats = 2 }) message `shouldBe` [message, message]
+      react (defaultConfig { repeats = 1 }) message `shouldBe` [message]
+      react (defaultConfig { repeats = 2 }) message `shouldBe` [message, message]
 
   describe "Bot.messageToAction" $ do
     it "separates commands and regular messages" $ do
