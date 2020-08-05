@@ -1,5 +1,5 @@
 import Test.Hspec
-import Bot (Action(..), Config(..), InMessage(..), OutMessage(..), defaultConfig, messageToAction, react)
+import Bot (Config(..), InMessage(..), OutMessage(..), defaultConfig, react)
 
 main = hspec spec
 
@@ -20,10 +20,3 @@ spec = do
     it "sets the number of repeats when the user pushes a button on the keyboard" $ do
       react defaultConfig (KeyboardKeyPushed 5)
         `shouldBe` (defaultConfig { repeats = 5 }, [OutTextMessage "The messages will now be repeated 5 times."])
-
-  describe "Bot.messageToAction" $ do
-    it "separates commands and regular messages" $ do
-      messageToAction (InTextMessage "Some text") `shouldBe` Echo "Some text"
-      messageToAction (InTextMessage "/help") `shouldBe` Help
-      messageToAction (InTextMessage "/repeat") `shouldBe` RequestRepeatKeyboard
-      messageToAction (KeyboardKeyPushed 1) `shouldBe` SetRepeatTo 1

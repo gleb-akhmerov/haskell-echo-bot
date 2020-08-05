@@ -1,12 +1,10 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Bot
-    ( Action(..)
-    , Config(..)
+    ( Config(..)
     , InMessage(..)
     , OutMessage(..)
     , react
-    , messageToAction
     , defaultConfig
     ) where
 
@@ -33,30 +31,15 @@ data OutMessage
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-data Action
-  = Echo String
-  | Help
-  | RequestRepeatKeyboard
-  | SetRepeatTo Int
-  deriving (Show, Eq)
-
-messageToAction :: InMessage -> Action
-messageToAction message = case message of
+react :: Config -> InMessage -> (Config, [OutMessage])
+react config message = case message of
   InTextMessage text ->
     case text of
-      "/help"   -> Help
-      "/repeat" -> RequestRepeatKeyboard
-      otherwise -> Echo text
-  KeyboardKeyPushed n -> SetRepeatTo n
-
-react :: Config -> InMessage -> (Config, [OutMessage])
-react config message
-  = case messageToAction message of
-      Echo text ->
-        (config, replicate (repeats config) $ OutTextMessage text)
-      Help ->
+      "/help" ->
         (config, [OutTextMessage $ helpText config])
-      RequestRepeatKeyboard ->
+      "/repeat" ->
         (config, [SendKeyboard (repeatKeyboardText config) [1, 2, 3, 4, 5]])
-      SetRepeatTo n ->
-        (config { repeats = n }, [OutTextMessage $ "The messages will now be repeated " ++ show n ++ " times."])
+      otherwise ->
+        (config, replicate (repeats config) $ OutTextMessage text)
+  KeyboardKeyPushed n ->
+    (config { repeats = n }, [OutTextMessage $ "The messages will now be repeated " ++ show n ++ " times."])
