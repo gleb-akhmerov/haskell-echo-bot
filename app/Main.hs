@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Bot (react, Message(..))
 
 main :: IO ()
-main = someFunc
+main = print $ react $ Message { text = "Echo me" }

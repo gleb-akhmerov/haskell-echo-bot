@@ -27,7 +27,7 @@ source-repository head
 
 library
   exposed-modules:
-      Lib
+      Bot
   other-modules:
       Paths_haskell_echo_bot
   hs-source-dirs:
