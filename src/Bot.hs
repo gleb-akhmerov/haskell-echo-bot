@@ -27,19 +27,19 @@ data InMessage
   deriving (Show, Eq)
 
 data OutMessage
-  = OutTextMessage String
+  = SendMessageTimes Int String
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: Config -> InMessage -> (Config, [OutMessage])
+react :: Config -> InMessage -> (Config, OutMessage)
 react config message = case message of
   InTextMessage text ->
     case text of
       "/help" ->
-        (config, [OutTextMessage $ helpText config])
+        (config, SendMessageTimes 1 (helpText config))
       "/repeat" ->
-        (config, [SendKeyboard (repeatKeyboardText config) [1, 2, 3, 4, 5]])
+        (config, SendKeyboard (repeatKeyboardText config) [1, 2, 3, 4, 5])
       otherwise ->
-        (config, replicate (repeats config) $ OutTextMessage text)
+        (config, SendMessageTimes (repeats config) text)
   KeyboardKeyPushed n ->
-    (config { repeats = n }, [OutTextMessage $ "The messages will now be repeated " ++ show n ++ " times."])
+    (config { repeats = n }, SendMessageTimes 1 ("The messages will now be repeated " ++ show n ++ " times."))
