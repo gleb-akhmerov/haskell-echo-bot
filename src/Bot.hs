@@ -2,11 +2,15 @@
 
 module Bot
     ( react
+    , Config(..)
     , Message(..)
     ) where
 
 
+data Config = Config { repeats :: Int }
+
 data Message = Message { text :: String } deriving Show
 
-react :: Message -> [Message]
-react (Message { text } ) = [Message { text = text }]
+react :: Config -> Message -> [Message]
+react (Config { repeats }) (Message { text })
+  = replicate repeats $ Message { text = text }
