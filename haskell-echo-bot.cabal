@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: ff51efdc9ce837ce019214a2f9998464e91ed8811c2f909b0a0ab5af98a0d559
+
+name:           haskell-echo-bot
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/gleb-akhmerov/haskell-echo-bot#readme>
+homepage:       https://github.com/gleb-akhmerov/haskell-echo-bot#readme
+bug-reports:    https://github.com/gleb-akhmerov/haskell-echo-bot/issues
+author:         Gleb Akhmerov
+maintainer:     g.akhmerov@gmail.com.com
+copyright:      2020 Gleb Akhmerov
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/gleb-akhmerov/haskell-echo-bot
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_haskell_echo_bot
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable haskell-echo-bot-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_haskell_echo_bot
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , haskell-echo-bot
+  default-language: Haskell2010
+
+test-suite haskell-echo-bot-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_haskell_echo_bot
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , haskell-echo-bot
+  default-language: Haskell2010
