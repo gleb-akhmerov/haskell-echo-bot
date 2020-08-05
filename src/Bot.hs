@@ -9,7 +9,7 @@ module Bot
 
 data Config = Config { repeats :: Int }
 
-data Message = Message { text :: String } deriving Show
+data Message = Message { text :: String } deriving (Show, Eq)
 
 react :: Config -> Message -> [Message]
 react (Config { repeats }) (Message { text })
