@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 04da4dafc07a4267c03a05d75d59b8033c6b4c409dcebafae4b49b6f0a3489ce
+-- hash: 1613e96dcbcb12dde9ad7864cb2993bd56a06d337bceaf6c8809bb7c1aff5360
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -35,6 +35,7 @@ library
   build-depends:
       base >=4.7 && <5
     , hspec
+    , mtl
   default-language: Haskell2010
 
 executable haskell-echo-bot-exe
@@ -48,6 +49,7 @@ executable haskell-echo-bot-exe
       base >=4.7 && <5
     , haskell-echo-bot
     , hspec
+    , mtl
   default-language: Haskell2010
 
 test-suite haskell-echo-bot-test
@@ -62,4 +64,5 @@ test-suite haskell-echo-bot-test
       base >=4.7 && <5
     , haskell-echo-bot
     , hspec
+    , mtl
   default-language: Haskell2010

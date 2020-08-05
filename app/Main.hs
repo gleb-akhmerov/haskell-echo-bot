@@ -1,6 +1,7 @@
 module Main where
 
+import Control.Monad.State.Lazy (evalState)
 import Bot (react, InMessage(..), defaultConfig)
 
 main :: IO ()
-main = print $ react defaultConfig (InTextMessage "Echo me")
+main = print $ evalState (react $ InTextMessage "Echo me") defaultConfig
