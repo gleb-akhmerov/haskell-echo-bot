@@ -1,6 +1,6 @@
 module Main where
 
-import Bot (react, Message(..), defaultConfig)
+import Bot (react, InMessage(..), defaultConfig)
 
 main :: IO ()
-main = print $ react defaultConfig (Message "Echo me")
+main = print $ react defaultConfig (InTextMessage "Echo me")
