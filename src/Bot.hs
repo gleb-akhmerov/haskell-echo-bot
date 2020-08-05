@@ -1,16 +1,28 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Bot
-    ( react
+    ( Action(..)
     , Config(..)
     , Message(..)
+    , react
+    , messageToAction
     ) where
 
 
 data Config = Config { repeats :: Int }
 
-data Message = Message { text :: String } deriving (Show, Eq)
+data Message = Message String deriving (Show, Eq)
+
+data Action
+  = Echo String
+  | Help
+  deriving (Show, Eq)
+
+messageToAction :: Message -> Action
+messageToAction (Message text) = case text of
+  "/help"   -> Help
+  otherwise -> Echo text
 
 react :: Config -> Message -> [Message]
-react (Config { repeats }) (Message { text })
-  = replicate repeats $ Message { text = text }
+react (Config { repeats }) (Message text)
+  = replicate repeats $ Message text
