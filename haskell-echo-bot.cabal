@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ff51efdc9ce837ce019214a2f9998464e91ed8811c2f909b0a0ab5af98a0d559
+-- hash: 9dda70b412980f7aa2c77ef16e564d567a520c04f57924222b4bbe9665540cc3
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -12,7 +12,7 @@ description:    Please see the README on GitHub at <https://github.com/gleb-akhm
 homepage:       https://github.com/gleb-akhmerov/haskell-echo-bot#readme
 bug-reports:    https://github.com/gleb-akhmerov/haskell-echo-bot/issues
 author:         Gleb Akhmerov
-maintainer:     g.akhmerov@gmail.com.com
+maintainer:     g.akhmerov@gmail.com
 copyright:      2020 Gleb Akhmerov
 license:        BSD3
 license-file:   LICENSE
