@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c59713b1c1b8890556d633e6e047c40772d438734644ead5924b5502023a36b1
+-- hash: ec5d9362b48d7fee5a48eaba00d5bb56956595805b055415bc93542656d0cc56
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -28,14 +28,18 @@ source-repository head
 library
   exposed-modules:
       Bot
+      Telegram
   other-modules:
       Paths_haskell_echo_bot
   hs-source-dirs:
       src
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , config-ini
     , hspec
+    , http-conduit
     , mtl
     , text
   default-language: Haskell2010
@@ -48,10 +52,13 @@ executable haskell-echo-bot-exe
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , config-ini
     , haskell-echo-bot
     , hspec
+    , http-conduit
     , mtl
     , text
   default-language: Haskell2010
@@ -65,10 +72,13 @@ test-suite haskell-echo-bot-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , config-ini
     , haskell-echo-bot
     , hspec
+    , http-conduit
     , mtl
     , text
   default-language: Haskell2010

@@ -25,6 +25,9 @@ dependencies:
 - mtl
 - config-ini
 - text
+- http-conduit
+- bytestring
+- aeson
 
 library:
   source-dirs: src
