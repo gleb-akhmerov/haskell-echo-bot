@@ -10,15 +10,13 @@ module Bot
 
 import Control.Monad.State.Lazy (State, get, put)
 
-data Config = Config { repeats :: Int
-                     , helpText :: String
+data Config = Config { helpText :: String
                      , repeatKeyboardText :: String
                      } deriving (Show, Eq)
 
 defaultConfig =
   Config
-    { repeats = 1
-    , helpText = "This bot repeats the messages that you send it."
+    { helpText = "This bot repeats the messages that you send it."
     , repeatKeyboardText = "How many times would you want me to repeat my messages?"
     }
 
@@ -32,9 +30,8 @@ data OutMessage
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: InMessage -> State Config OutMessage
-react message = do
-  config <- get
+react :: Config -> InMessage -> State Int OutMessage
+react config message =
   case message of
     InTextMessage text ->
       case text of
@@ -42,8 +39,9 @@ react message = do
           return $ SendMessageTimes 1 (helpText config)
         "/repeat" ->
           return $ SendKeyboard (repeatKeyboardText config) [1, 2, 3, 4, 5]
-        otherwise ->
-          return $ SendMessageTimes (repeats config) text
+        otherwise -> do
+          repeats <- get
+          return $ SendMessageTimes repeats text
     KeyboardKeyPushed n -> do
-      put config { repeats = n }
+      put n
       return $ SendMessageTimes 1 ("The messages will now be repeated " ++ show n ++ " times.")
