@@ -8,7 +8,7 @@ module Bot
     , defaultConfig
     ) where
 
-import Control.Monad.State.Lazy (State, get, put)
+import Control.Monad.State (StateT, get, put)
 
 data Config = Config { helpText :: String
                      , repeatKeyboardText :: String
@@ -30,7 +30,7 @@ data OutMessage
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: Config -> InMessage -> State Int OutMessage
+react :: Monad m => Config -> InMessage -> StateT Int m OutMessage
 react config message =
   case message of
     InTextMessage text ->
