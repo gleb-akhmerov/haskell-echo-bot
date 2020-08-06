@@ -24,3 +24,8 @@ spec = do
     it "sets the number of repeats when the user pushes a button on the keyboard" $ do
       runState (react defaultConfig (KeyboardKeyPushed 5)) 1
         `shouldBe` (SendMessageTimes 1 "The messages will now be repeated 5 times.", 5)
+
+      let conversation = do
+           react defaultConfig (KeyboardKeyPushed 5)
+           react defaultConfig (InTextMessage "text")
+      evalState conversation 1 `shouldBe` (SendMessageTimes 5 "text")
