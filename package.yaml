@@ -23,6 +23,8 @@ dependencies:
 - base >= 4.7 && < 5
 - hspec
 - mtl
+- config-ini
+- text
 
 library:
   source-dirs: src
