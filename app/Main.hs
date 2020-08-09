@@ -2,10 +2,9 @@
 
 module Main where
 
-import Control.Monad.State (StateT, evalStateT, liftIO)
+import Control.Monad.State ( evalStateT )
 import qualified Data.Text.IO as T
-import Data.Ini.Config (IniParser, section, fieldOf, string, parseIniFile)
-import Bot (react, InMessage(..), OutMessage(..), defaultConfig)
+import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile )
 import qualified Telegram
 
 data AuthConfig = AuthConfig

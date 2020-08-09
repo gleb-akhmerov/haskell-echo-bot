@@ -14,6 +14,7 @@ data Config = Config { helpText :: String
                      , repeatKeyboardText :: String
                      } deriving (Show, Eq)
 
+defaultConfig :: Config
 defaultConfig =
   Config
     { helpText = "This bot repeats the messages that you send it."
@@ -39,7 +40,7 @@ react config message =
           return $ SendMessageTimes 1 (helpText config)
         "/repeat" ->
           return $ SendKeyboard (repeatKeyboardText config) [1, 2, 3, 4, 5]
-        otherwise -> do
+        _ -> do
           repeats <- get
           return $ SendMessageTimes repeats text
     KeyboardKeyPushed n -> do
