@@ -6,7 +6,7 @@ module Telegram where
 
 import           Data.Function ( (&) )
 import           Control.Monad ( forM_ )
-import           Control.Monad.State ( runState )
+import           Control.Monad.State ( StateT, runState, liftIO )
 import           Network.HTTP.Simple ( httpLBS, httpNoBody, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import           Data.Aeson ( FromJSON(..), decode, genericParseJSON, defaultOptions, fieldLabelModifier, camelTo2, Value ( Bool, Object ), (.:), object, (.=) )
@@ -67,39 +67,38 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
-handleMessage :: String -> Int -> Message -> IO Int
-handleMessage token repeats message =
+handleMessage :: String -> Message -> StateT Int IO ()
+handleMessage token message =
   case text message of
-    Nothing -> return repeats
+    Nothing -> return ()
     Just text -> do
-      let (outMessage, newRepeats) = runState (react defaultConfig (InTextMessage text)) repeats
+      outMessage <- react defaultConfig (InTextMessage text)
       case outMessage of
         SendMessageTimes n text ->
-          forM_ (replicate n text) (sendMessage token (userId message))
+          liftIO $ forM_ (replicate n text) (sendMessage token (userId message))
         SendKeyboard text buttons ->
           error "TODO"
-      return newRepeats
 
-handleUpdates :: String -> Int -> [Update] -> IO Int
-handleUpdates token repeats updates =
+handleUpdates :: String -> [Update] -> StateT Int IO ()
+handleUpdates token updates =
   case updates of
-    [] -> return repeats
+    [] -> return ()
     (u:us) -> case message u of
       Nothing -> do
-        print $ "Ignoring update: " ++ show u
-        handleUpdates token repeats us
+        liftIO $ print $ "Ignoring update: " ++ show u
+        handleUpdates token us
       Just message -> do
-        newRepeats <- handleMessage token repeats message
-        handleUpdates token newRepeats us
+        handleMessage token message
+        handleUpdates token us
 
-runBot :: String -> Int -> Integer -> IO ()
-runBot token repeats offset = do
-  print $ "Offset: " ++ show offset
-  eitherUpdates <- getUpdates token offset
+runBot :: String -> Integer -> StateT Int IO ()
+runBot token offset = do
+  liftIO $ print $ "Offset: " ++ show offset
+  eitherUpdates <- liftIO $ getUpdates token offset
   case eitherUpdates of
-    Left error    -> print error
-    Right []      -> runBot token repeats offset
+    Left error    -> liftIO $ print error
+    Right []      -> runBot token offset
     Right updates -> do
-      newRepeats <- handleUpdates token repeats updates
+      newRepeats <- handleUpdates token updates
       let newOffset = updates & last & updateId & (+1)
-      runBot token newRepeats newOffset
+      runBot token newOffset

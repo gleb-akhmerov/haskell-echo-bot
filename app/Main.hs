@@ -23,5 +23,4 @@ main = do
   configText <- T.readFile "config.ini"
   case parseIniFile configText configParser of
     Left err -> putStrLn err
-    Right config -> Telegram.runBot (telegramToken config) 1 0
-  return ()
+    Right config -> evalStateT (Telegram.runBot (telegramToken config) 0) 1
