@@ -78,7 +78,7 @@ handleMessage token (Message { messageUserId, messageText }) =
       case outMessage of
         SendMessageTimes n sendText ->
           liftIO $ forM_ (replicate n sendText) (sendMessage token messageUserId)
-        SendKeyboard keyboardText buttons ->
+        SendKeyboard _ _ ->
           error "TODO"
 
 handleUpdates :: String -> [Update] -> StateT Int IO ()
