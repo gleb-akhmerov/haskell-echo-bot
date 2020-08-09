@@ -11,7 +11,7 @@ import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parse
 import Data.Aeson ( FromJSON(..), decode, Value, (.:), (.:!), object, (.=), withObject )
 import Data.Aeson.Types ( Parser, parseMaybe )
 import GHC.Generics ( Generic )
-import Bot ( react, InMessage(..), OutMessage(..), defaultConfig )
+import Bot ( react, InMessage(..), OutMessage(..), Config )
 
 parseResult :: FromJSON a => Value -> Parser (Either String a)
 parseResult = withObject "Result" $ \x -> do
@@ -69,38 +69,38 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
-handleMessage :: String -> Message -> StateT Int IO ()
-handleMessage token (Message { messageUserId, messageText }) =
+handleMessage :: String -> Config -> Message -> StateT Int IO ()
+handleMessage token config (Message { messageUserId, messageText }) =
   case messageText of
     Nothing -> return ()
     Just text -> do
-      outMessage <- react defaultConfig (InTextMessage text)
+      outMessage <- react config (InTextMessage text)
       case outMessage of
         SendMessageTimes n sendText ->
           liftIO $ forM_ (replicate n sendText) (sendMessage token messageUserId)
         SendKeyboard _ _ ->
           error "TODO"
 
-handleUpdates :: String -> [Update] -> StateT Int IO ()
-handleUpdates token updates =
+handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
+handleUpdates token updates config =
   case updates of
     [] -> return ()
     (u:us) -> case updateMessage u of
       Nothing -> do
         liftIO $ print $ "Ignoring update: " ++ show u
-        handleUpdates token us
+        handleUpdates token us config
       Just message -> do
-        handleMessage token message
-        handleUpdates token us
+        handleMessage token config message
+        handleUpdates token us config
 
-runBot :: String -> Integer -> StateT Int IO ()
-runBot token offset = do
+runBot :: String -> Integer -> Config -> StateT Int IO ()
+runBot token offset config = do
   liftIO $ print $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset
   case eitherUpdates of
     Left err      -> liftIO $ print err
-    Right []      -> runBot token offset
+    Right []      -> runBot token offset config
     Right updates -> do
-      handleUpdates token updates
+      handleUpdates token updates config
       let newOffset = updates & last & updateId & (+1)
-      runBot token newOffset
+      runBot token newOffset config
