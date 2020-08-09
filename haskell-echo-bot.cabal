@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8050eaffd1072d91b02afcf8c2d7e555803638a773512dac47a8a0bb75d66ccd
+-- hash: 77b46577e10531421c63d0c9037bb450b162019c10039d101383c0ceb73fd6e2
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -71,7 +71,7 @@ test-suite haskell-echo-bot-test
       Paths_haskell_echo_bot
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
       aeson
     , base >=4.7 && <5

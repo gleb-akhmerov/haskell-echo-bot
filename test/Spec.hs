@@ -2,6 +2,7 @@ import Test.Hspec
 import Control.Monad.State.Lazy (runState, evalState)
 import Bot (Config(..), InMessage(..), OutMessage(..), defaultConfig, react)
 
+main :: IO ()
 main = hspec spec
 
 spec :: Spec
@@ -26,6 +27,6 @@ spec = do
         `shouldBe` (SendMessageTimes 1 "The messages will now be repeated 5 times.", 5)
 
       let conversation = do
-           react defaultConfig (KeyboardKeyPushed 5)
+           _ <- react defaultConfig (KeyboardKeyPushed 5)
            react defaultConfig (InTextMessage "text")
       evalState conversation 1 `shouldBe` (SendMessageTimes 5 "text")
