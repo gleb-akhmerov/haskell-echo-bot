@@ -4,40 +4,42 @@
 
 module Telegram where
 
-import           Data.Function ( (&) )
-import           Control.Monad ( forM_ )
-import           Control.Monad.State ( StateT, runState, liftIO )
-import           Network.HTTP.Simple ( httpLBS, httpNoBody, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
-import qualified Data.ByteString.Lazy.Char8 as LBS
-import           Data.Aeson ( FromJSON(..), decode, genericParseJSON, defaultOptions, fieldLabelModifier, camelTo2, Value ( Bool, Object ), (.:), object, (.=) )
-import           Data.Aeson.Types ( Parser, parseMaybe )
-import           GHC.Generics ( Generic )
-import           Bot ( react, InMessage(..), OutMessage(..), defaultConfig )
+import Data.Function ( (&) )
+import Control.Monad ( forM_ )
+import Control.Monad.State ( StateT, liftIO )
+import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
+import Data.Aeson ( FromJSON(..), decode, Value, (.:), (.:!), object, (.=), withObject )
+import Data.Aeson.Types ( Parser, parseMaybe )
+import GHC.Generics ( Generic )
+import Bot ( react, InMessage(..), OutMessage(..), defaultConfig )
 
 parseResult :: FromJSON a => Value -> Parser (Either String a)
-parseResult (Object x) = do
+parseResult = withObject "Result" $ \x -> do
   ok <- x .: "ok"
   case ok of
-    Bool True  -> Right <$> x .: "result"
-    Bool False -> Left  <$> x .: "description"
+    True  -> Right <$> x .: "result"
+    False -> Left  <$> x .: "description"
 
 data Update
-   = Update { updateId :: Integer, message :: Maybe Message }
+   = Update { updateId :: Integer, updateMessage :: Maybe Message }
    deriving (Generic, Show)
 
 data Message
-   = Message { userId :: Integer, text :: Maybe String }
+   = Message { messageUserId :: Integer, messageText :: Maybe String }
    deriving (Generic, Show)
 
 instance FromJSON Update where
-  parseJSON = genericParseJSON defaultOptions { fieldLabelModifier = camelTo2 '_' }
+  parseJSON = withObject "Update" $ \x -> do
+    uId      <- x .:  "update_id"
+    uMessage <- x .:! "message"
+    return $ Update { updateId = uId, updateMessage = uMessage }
 
 instance FromJSON Message where
-  parseJSON (Object x) = do
+  parseJSON = withObject "Message" $ \x -> do
     text   <- x .: "text"
     user   <- x .: "from"
     userId <- user .: "id"
-    return $ Message { text = text, userId = userId }
+    return $ Message { messageText = text, messageUserId = userId }
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -61,29 +63,29 @@ getUpdates token offset = do
 
 sendMessage :: String -> Integer -> String -> IO ()
 sendMessage token chatId text = do
-  httpNoBody $
+  _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/sendMessage")
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
 handleMessage :: String -> Message -> StateT Int IO ()
-handleMessage token message =
-  case text message of
+handleMessage token (Message { messageUserId, messageText }) =
+  case messageText of
     Nothing -> return ()
     Just text -> do
       outMessage <- react defaultConfig (InTextMessage text)
       case outMessage of
-        SendMessageTimes n text ->
-          liftIO $ forM_ (replicate n text) (sendMessage token (userId message))
-        SendKeyboard text buttons ->
+        SendMessageTimes n sendText ->
+          liftIO $ forM_ (replicate n sendText) (sendMessage token messageUserId)
+        SendKeyboard keyboardText buttons ->
           error "TODO"
 
 handleUpdates :: String -> [Update] -> StateT Int IO ()
 handleUpdates token updates =
   case updates of
     [] -> return ()
-    (u:us) -> case message u of
+    (u:us) -> case updateMessage u of
       Nothing -> do
         liftIO $ print $ "Ignoring update: " ++ show u
         handleUpdates token us
@@ -96,9 +98,9 @@ runBot token offset = do
   liftIO $ print $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset
   case eitherUpdates of
-    Left error    -> liftIO $ print error
+    Left err      -> liftIO $ print err
     Right []      -> runBot token offset
     Right updates -> do
-      newRepeats <- handleUpdates token updates
+      handleUpdates token updates
       let newOffset = updates & last & updateId & (+1)
       runBot token newOffset

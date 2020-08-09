@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ec5d9362b48d7fee5a48eaba00d5bb56956595805b055415bc93542656d0cc56
+-- hash: 7e117b7dd0aa598b1986f56846fddf5698852957faf503c0cea069ad8bd49e10
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -33,6 +33,7 @@ library
       Paths_haskell_echo_bot
   hs-source-dirs:
       src
+  ghc-options: -Wall
   build-depends:
       aeson
     , base >=4.7 && <5
