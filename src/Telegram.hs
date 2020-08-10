@@ -1,19 +1,19 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Telegram where
 
+import Text.Read ( readMaybe )
+import Control.Applicative ( empty )
 import Data.Function ( (&) )
 import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
-import Data.Aeson ( FromJSON(..), decode, Value, (.:), (.:!), object, (.=), withObject )
+import Data.Aeson ( FromJSON(..), decode, Value(..), (.:), (.:!), object, (.=), withObject, toJSONList )
 import Data.Aeson.Types ( Parser, parseMaybe )
-import GHC.Generics ( Generic )
 import Bot ( react, InMessage(..), OutMessage(..), Config )
 
-parseResult :: FromJSON a => Value -> Parser (Either String a)
+parseResult :: Value -> Parser (Either String [Update])
 parseResult = withObject "Result" $ \x -> do
   ok <- x .: "ok"
   case ok of
@@ -22,24 +22,44 @@ parseResult = withObject "Result" $ \x -> do
 
 data Update
    = Update { updateId :: Integer, updateMessage :: Maybe Message }
-   deriving (Generic, Show)
+   deriving (Show)
 
 data Message
-   = Message { messageUserId :: Integer, messageText :: Maybe String }
-   deriving (Generic, Show)
+   = TextMessage { messageUserId :: Integer, messageText :: String }
+   | CallbackQuery { callbackQueryUserId :: Integer, callbackQueryData :: Int }
+   deriving (Show)
 
 instance FromJSON Update where
   parseJSON = withObject "Update" $ \x -> do
-    uId      <- x .:  "update_id"
-    uMessage <- x .:! "message"
+    uId         <- x .:  "update_id"
+    textMessage <- x .:! "message"
+    uMessage <- case textMessage of
+      Just m  -> Just <$> parseTextMessage m
+      Nothing -> do
+        maybeCq <- x .:! "callback_query"
+        case maybeCq of
+          Just cq -> Just <$> parseCallbackQuery cq
+          Nothing -> return Nothing
     return $ Update { updateId = uId, updateMessage = uMessage }
 
-instance FromJSON Message where
-  parseJSON = withObject "Message" $ \x -> do
-    text   <- x .: "text"
-    user   <- x .: "from"
-    userId <- user .: "id"
-    return $ Message { messageText = text, messageUserId = userId }
+parseTextMessage :: Value -> Parser Message
+parseTextMessage = withObject "TextMessage" $ \x -> do
+  text   <- x .: "text"
+  user   <- x .: "from"
+  userId <- user .: "id"
+  return $ TextMessage { messageText = text, messageUserId = userId }
+
+parseCallbackQuery :: Value -> Parser Message
+parseCallbackQuery = withObject "CallbackQuery" $ \x -> do
+  user   <- x .: "from"
+  userId <- user .: "id"
+  stringData <- x .: "data"
+  case readMaybe stringData of
+    Nothing -> empty
+    Just cqData ->
+      return $ CallbackQuery { callbackQueryData = cqData
+                             , callbackQueryUserId = userId
+                             }
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -54,7 +74,7 @@ getUpdates token offset = do
       ("https://api.telegram.org/bot" ++ token ++ "/getUpdates")
       (object ["offset" .= offset])
   let json = getResponseBody response
-  let maybeResult = decode json >>= parseMaybe parseResult :: Maybe (Either String [Update])
+  let maybeResult = decode json >>= parseMaybe parseResult
   return $
     case maybeResult of
       Nothing ->
@@ -69,17 +89,39 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
+sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
+sendKeyboard token userId text buttons = do
+  let stringButtons = map show buttons
+  let json =
+        (object [ "chat_id" .= userId
+                , "text" .= text
+                , "reply_markup" .=
+                  object ["inline_keyboard" .=
+                    toJSONList [map (\b -> object ["text" .= b, "callback_data" .= b]) stringButtons]]
+                ])
+  _ <- httpLBS $
+    requestJSON
+      ("https://api.telegram.org/bot" ++ token ++ "/sendMessage")
+      json
+  return ()      
+
+sendOutMessage :: String -> Integer -> OutMessage -> IO ()
+sendOutMessage token userId outMessage =
+  case outMessage of
+    SendMessageTimes n sendText ->
+      forM_ (replicate n sendText) (sendMessage token userId)
+    SendKeyboard text buttons ->
+      sendKeyboard token userId text buttons
+
 handleMessage :: String -> Config -> Message -> StateT Int IO ()
-handleMessage token config (Message { messageUserId, messageText }) =
-  case messageText of
-    Nothing -> return ()
-    Just text -> do
-      outMessage <- react config (InTextMessage text)
-      case outMessage of
-        SendMessageTimes n sendText ->
-          liftIO $ forM_ (replicate n sendText) (sendMessage token messageUserId)
-        SendKeyboard _ _ ->
-          error "TODO"
+handleMessage token config message =
+  case message of
+    TextMessage { messageText, messageUserId } -> do
+      outMessage <- react config (InTextMessage messageText)
+      liftIO $ sendOutMessage token messageUserId outMessage
+    CallbackQuery { callbackQueryData, callbackQueryUserId } -> do
+      outMessage <- react config (KeyboardKeyPushed callbackQueryData)
+      liftIO $ sendOutMessage token callbackQueryUserId outMessage
 
 handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
 handleUpdates token updates config =

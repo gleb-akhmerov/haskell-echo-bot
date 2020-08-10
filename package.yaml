@@ -33,7 +33,6 @@ library:
   source-dirs: src
   ghc-options:
     - -Wall
-    - -Werror
 
 executables:
   haskell-echo-bot-exe:
@@ -44,7 +43,6 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
-    - -Werror
     dependencies:
     - haskell-echo-bot
 
@@ -57,6 +55,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
-    - -Werror
     dependencies:
     - haskell-echo-bot
