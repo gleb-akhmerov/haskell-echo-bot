@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 77b46577e10531421c63d0c9037bb450b162019c10039d101383c0ceb73fd6e2
+-- hash: 35aa4be5a22b87df5abfdd13bdf80008fa5335c2199de919649649a47c790b08
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -42,6 +42,8 @@ library
     , hspec
     , http-conduit
     , mtl
+    , record-dot-preprocessor
+    , record-hasfield
     , text
   default-language: Haskell2010
 
@@ -61,6 +63,8 @@ executable haskell-echo-bot-exe
     , hspec
     , http-conduit
     , mtl
+    , record-dot-preprocessor
+    , record-hasfield
     , text
   default-language: Haskell2010
 
@@ -81,5 +85,7 @@ test-suite haskell-echo-bot-test
     , hspec
     , http-conduit
     , mtl
+    , record-dot-preprocessor
+    , record-hasfield
     , text
   default-language: Haskell2010

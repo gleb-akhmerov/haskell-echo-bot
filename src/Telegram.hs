@@ -1,5 +1,7 @@
+{-# OPTIONS_GHC -F -pgmF=record-dot-preprocessor #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Telegram where
 
@@ -12,6 +14,7 @@ import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parse
 import Data.Aeson ( FromJSON(..), decode, Value(..), (.:), (.:!), object, (.=), withObject, toJSONList )
 import Data.Aeson.Types ( Parser, parseMaybe )
 import Bot ( react, InMessage(..), OutMessage(..), Config )
+import Prelude hiding ( id )
 
 parseResult :: Value -> Parser (Either String [Update])
 parseResult = withObject "Result" $ \x -> do
@@ -21,47 +24,44 @@ parseResult = withObject "Result" $ \x -> do
     False -> Left  <$> x .: "description"
 
 data Update
-   = Update { updateId :: Integer, updateMessage :: Maybe Message }
+   = Update { id :: Integer, message :: Maybe Message }
    deriving (Show)
 
 data Message
-   = TextMessage { messageUserId :: Integer, messageText :: String }
-   | CallbackQuery { callbackQueryId :: String, callbackQueryUserId :: Integer, callbackQueryData :: Int }
+   = TextMessage { userId :: Integer, text :: String }
+   | CallbackQuery { userId :: Integer, id :: String, data_ :: Int }
    deriving (Show)
 
 instance FromJSON Update where
   parseJSON = withObject "Update" $ \x -> do
-    uId         <- x .:  "update_id"
+    id          <- x .:  "update_id"
     textMessage <- x .:! "message"
-    uMessage <- case textMessage of
+    message <- case textMessage of
       Just m  -> Just <$> parseTextMessage m
       Nothing -> do
         maybeCq <- x .:! "callback_query"
         case maybeCq of
           Just cq -> Just <$> parseCallbackQuery cq
           Nothing -> return Nothing
-    return $ Update { updateId = uId, updateMessage = uMessage }
+    return $ Update {..}
 
 parseTextMessage :: Value -> Parser Message
 parseTextMessage = withObject "TextMessage" $ \x -> do
   text   <- x .: "text"
   user   <- x .: "from"
   userId <- user .: "id"
-  return $ TextMessage { messageText = text, messageUserId = userId }
+  return $ TextMessage {..}
 
 parseCallbackQuery :: Value -> Parser Message
 parseCallbackQuery = withObject "CallbackQuery" $ \x -> do
   user   <- x .: "from"
   userId <- user .: "id"
-  cqId   <- x .: "id"
+  id   <- x .: "id"
   stringData <- x .: "data"
   case readMaybe stringData of
     Nothing -> empty
-    Just cqData ->
-      return $ CallbackQuery { callbackQueryId = cqId
-                             , callbackQueryData = cqData
-                             , callbackQueryUserId = userId
-                             }
+    Just data_ ->
+      return $ CallbackQuery {..}
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -126,19 +126,19 @@ sendOutMessage token userId outMessage =
 handleMessage :: String -> Config -> Message -> StateT Int IO ()
 handleMessage token config message =
   case message of
-    TextMessage { messageText, messageUserId } -> do
-      outMessage <- react config (InTextMessage messageText)
-      liftIO $ sendOutMessage token messageUserId outMessage
-    CallbackQuery { callbackQueryId, callbackQueryData, callbackQueryUserId } -> do
-      outMessage <- react config (KeyboardKeyPushed callbackQueryData)
-      liftIO $ sendOutMessage token callbackQueryUserId outMessage
-      liftIO $ answerCallbackQuery token callbackQueryId
+    TextMessage { text, userId } -> do
+      outMessage <- react config (InTextMessage text)
+      liftIO $ sendOutMessage token userId outMessage
+    CallbackQuery { id, data_, userId } -> do
+      outMessage <- react config (KeyboardKeyPushed data_)
+      liftIO $ sendOutMessage token userId outMessage
+      liftIO $ answerCallbackQuery token id
 
 handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
 handleUpdates token updates config =
   case updates of
     [] -> return ()
-    (u:us) -> case updateMessage u of
+    (u:us) -> case u.message of
       Nothing -> do
         liftIO $ print $ "Ignoring update: " ++ show u
         handleUpdates token us config
@@ -155,5 +155,5 @@ runBot token offset config = do
     Right []      -> runBot token offset config
     Right updates -> do
       handleUpdates token updates config
-      let newOffset = updates & last & updateId & (+1)
+      let newOffset = updates & last & (.id) & (+1)
       runBot token newOffset config
