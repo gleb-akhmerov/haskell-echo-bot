@@ -23,6 +23,7 @@ Then, do the following:
 ## Development
 
 Project structure:
-- [src](src) contains the main logic of the bot and the code to interact with Telegram and VK APIs.
+- [src/Bot.hs](src/Bot.hs) contains the main logic of the bot.
+- [src/Telegram.hs](src/Telegram.hs) is the code which integrates the logic with the Telegram API.
 - [app/Main.hs](app/Main.hs) is the source of the executable. Here you will find the `main` function, which ties everything together. Run `stack run` to execute it.
 - [test](test) contains the tests, which you can run with `stack test`.
