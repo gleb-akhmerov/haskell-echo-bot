@@ -18,7 +18,7 @@ defaultConfig :: Config
 defaultConfig =
   Config
     { helpText = "This bot repeats the messages that you send it."
-    , repeatKeyboardText = "How many times would you want me to repeat my messages?"
+    , repeatKeyboardText = "How many times would you like me to repeat your messages?"
     }
 
 data InMessage

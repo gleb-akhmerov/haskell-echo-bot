@@ -1,8 +1,8 @@
 # Haskell Echo Bot
 
-This is a bot for Telegram and VK which repeats the messages that you send it.
+This is a bot for Telegram and VK which repeats the messages that you send to it.
 
-It also has two commands:
+It also understands two commands:
 - `/help` shows you the description of the bot.
 - `/repeat` allows you to configure the number of repeated messages that the bot will answer you with.
 
