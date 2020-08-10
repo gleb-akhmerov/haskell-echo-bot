@@ -26,7 +26,7 @@ data Update
 
 data Message
    = TextMessage { messageUserId :: Integer, messageText :: String }
-   | CallbackQuery { callbackQueryUserId :: Integer, callbackQueryData :: Int }
+   | CallbackQuery { callbackQueryId :: String, callbackQueryUserId :: Integer, callbackQueryData :: Int }
    deriving (Show)
 
 instance FromJSON Update where
@@ -53,11 +53,13 @@ parseCallbackQuery :: Value -> Parser Message
 parseCallbackQuery = withObject "CallbackQuery" $ \x -> do
   user   <- x .: "from"
   userId <- user .: "id"
+  cqId   <- x .: "id"
   stringData <- x .: "data"
   case readMaybe stringData of
     Nothing -> empty
     Just cqData ->
-      return $ CallbackQuery { callbackQueryData = cqData
+      return $ CallbackQuery { callbackQueryId = cqId
+                             , callbackQueryData = cqData
                              , callbackQueryUserId = userId
                              }
 
@@ -105,6 +107,14 @@ sendKeyboard token userId text buttons = do
       json
   return ()      
 
+answerCallbackQuery :: String -> String -> IO ()
+answerCallbackQuery token queryId = do
+  _ <- httpLBS $
+    requestJSON
+      ("https://api.telegram.org/bot" ++ token ++ "/answerCallbackQuery")
+      (object ["callback_query_id" .= queryId])
+  return ()
+
 sendOutMessage :: String -> Integer -> OutMessage -> IO ()
 sendOutMessage token userId outMessage =
   case outMessage of
@@ -119,9 +129,10 @@ handleMessage token config message =
     TextMessage { messageText, messageUserId } -> do
       outMessage <- react config (InTextMessage messageText)
       liftIO $ sendOutMessage token messageUserId outMessage
-    CallbackQuery { callbackQueryData, callbackQueryUserId } -> do
+    CallbackQuery { callbackQueryId, callbackQueryData, callbackQueryUserId } -> do
       outMessage <- react config (KeyboardKeyPushed callbackQueryData)
       liftIO $ sendOutMessage token callbackQueryUserId outMessage
+      liftIO $ answerCallbackQuery token callbackQueryId
 
 handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
 handleUpdates token updates config =
