@@ -74,7 +74,9 @@ getUpdates token offset = do
   response <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/getUpdates")
-      (object ["offset" .= offset])
+      (object [ "offset" .= offset
+              , "timeout" .= (60 :: Integer)
+              ])
   let json = getResponseBody response
   let maybeResult = decode json >>= parseMaybe parseResult
   return $
