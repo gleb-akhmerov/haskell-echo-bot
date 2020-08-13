@@ -37,6 +37,7 @@ data Message
        , mAnimation :: Maybe Animation
        , mAudio :: Maybe Audio
        , mDocument :: Maybe Document
+       , mSticker :: Maybe Sticker
        }
    deriving ( Generic, Show, Eq )
 
@@ -54,6 +55,10 @@ data Audio
 
 data Document
    = Document { documentFileId :: String }
+   deriving ( Generic, Show, Eq )
+
+data Sticker
+   = Sticker { stickerFileId :: String }
    deriving ( Generic, Show, Eq )
 
 instance FromJSON a => FromJSON (Result a) where
@@ -87,3 +92,7 @@ instance FromJSON Audio where
 instance FromJSON Document where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = camelTo2 '_' . drop (length "Document") }
+
+instance FromJSON Sticker where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop (length "Sticker") }

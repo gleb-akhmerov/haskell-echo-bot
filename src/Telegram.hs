@@ -47,10 +47,7 @@ sendMessage token chatId text = do
 
 sendMedia :: String -> Integer -> Media -> IO ()
 sendMedia token chatId (Media { mType, mFileId }) = do
-  let typeName = case mType of
-        Animation -> "Animation"
-        Audio     -> "Audio"
-        Document  -> "Document"
+  let typeName = show mType
   let paramName = map toLower typeName
   let method = "/send" ++ typeName
   _ <- httpLBS $

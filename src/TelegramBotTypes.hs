@@ -36,6 +36,7 @@ data MediaType
    = Animation
    | Audio
    | Document
+   | Sticker
    deriving ( Show )
 
 parseResult :: T.Result [T.Update] -> Either String [Update]
@@ -73,7 +74,9 @@ parseMessage T.Message { T.mAudio = Just m } =
   Right $ MediaMessage $ Media { mFileId = T.audioFileId m, mType = Audio }
 parseMessage T.Message { T.mDocument = Just m } =
   Right $ MediaMessage $ Media { mFileId = T.documentFileId m, mType = Document }
-parseMessage m @ (T.Message _ Nothing Nothing Nothing Nothing) =
+parseMessage T.Message { T.mSticker = Just m } =
+  Right $ MediaMessage $ Media { mFileId = T.stickerFileId m, mType = Sticker }
+parseMessage m @ (T.Message _ Nothing Nothing Nothing Nothing Nothing) =
   Left $ "Can't parse: " ++ show m
 
 parseCallbackQuery :: T.CallbackQuery -> Event

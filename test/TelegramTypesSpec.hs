@@ -27,6 +27,7 @@ spec = do
                     , mAnimation = Nothing
                     , mAudio = Nothing
                     , mDocument = Nothing
+                    , mSticker = Nothing
                     }
                   )
               , uCallbackQuery = Nothing
