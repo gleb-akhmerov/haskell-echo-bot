@@ -3,65 +3,14 @@
 
 module Telegram where
 
-import Text.Read ( readMaybe )
-import Control.Applicative ( empty )
 import Data.Function ( (&) )
 import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
-import Data.Aeson ( FromJSON(..), decode, Value(..), (.:), (.:!), object, (.=), withObject, toJSONList )
-import Data.Aeson.Types ( Parser, parseMaybe )
+import Data.Aeson ( decode, Value(..), object, (.=), toJSONList )
 import Bot ( react, InMessage(..), OutMessage(..), Config )
-
-parseResult :: Value -> Parser (Either String [Update])
-parseResult = withObject "Result" $ \x -> do
-  ok <- x .: "ok"
-  case ok of
-    True  -> Right <$> x .: "result"
-    False -> Left  <$> x .: "description"
-
-data Update
-   = Update { updateId :: Integer, updateMessage :: Maybe Message }
-   deriving (Show)
-
-data Message
-   = TextMessage { messageUserId :: Integer, messageText :: String }
-   | CallbackQuery { callbackQueryId :: String, callbackQueryUserId :: Integer, callbackQueryData :: Int }
-   deriving (Show)
-
-instance FromJSON Update where
-  parseJSON = withObject "Update" $ \x -> do
-    uId         <- x .:  "update_id"
-    textMessage <- x .:! "message"
-    uMessage <- case textMessage of
-      Just m  -> Just <$> parseTextMessage m
-      Nothing -> do
-        maybeCq <- x .:! "callback_query"
-        case maybeCq of
-          Just cq -> Just <$> parseCallbackQuery cq
-          Nothing -> return Nothing
-    return $ Update { updateId = uId, updateMessage = uMessage }
-
-parseTextMessage :: Value -> Parser Message
-parseTextMessage = withObject "TextMessage" $ \x -> do
-  text   <- x .: "text"
-  user   <- x .: "from"
-  userId <- user .: "id"
-  return $ TextMessage { messageText = text, messageUserId = userId }
-
-parseCallbackQuery :: Value -> Parser Message
-parseCallbackQuery = withObject "CallbackQuery" $ \x -> do
-  user   <- x .: "from"
-  userId <- user .: "id"
-  cqId   <- x .: "id"
-  stringData <- x .: "data"
-  case readMaybe stringData of
-    Nothing -> empty
-    Just cqData ->
-      return $ CallbackQuery { callbackQueryId = cqId
-                             , callbackQueryData = cqData
-                             , callbackQueryUserId = userId
-                             }
+import TelegramBotTypes
+import qualified TelegramTypes as T
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -78,12 +27,13 @@ getUpdates token offset = do
               , "timeout" .= (60 :: Integer)
               ])
   let json = getResponseBody response
-  let maybeResult = decode json >>= parseMaybe parseResult
+  let maybeResult = decode json :: Maybe (T.Result [T.Update])
   return $
     case maybeResult of
       Nothing ->
-        Left $ "Unable to parse json as (Result [Update]): " ++ (show json)
-      Just res -> res
+        Left $ "Unable to parse json from getUpdates: " ++ (show json)
+      Just r ->
+        parseResult r
 
 sendMessage :: String -> Integer -> String -> IO ()
 sendMessage token chatId text = do
@@ -125,37 +75,37 @@ sendOutMessage token userId outMessage =
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleMessage :: String -> Config -> Message -> StateT Int IO ()
-handleMessage token config message =
-  case message of
-    TextMessage { messageText, messageUserId } -> do
-      outMessage <- react config (InTextMessage messageText)
-      liftIO $ sendOutMessage token messageUserId outMessage
-    CallbackQuery { callbackQueryId, callbackQueryData, callbackQueryUserId } -> do
-      outMessage <- react config (KeyboardKeyPushed callbackQueryData)
-      liftIO $ sendOutMessage token callbackQueryUserId outMessage
-      liftIO $ answerCallbackQuery token callbackQueryId
+handleUpdate :: String -> Update -> Config -> StateT Int IO ()
+handleUpdate _ (u @ UnknownUpdate {}) _ =
+  liftIO $ putStrLn $ "Ignoring update: " ++ show u
+handleUpdate token (Update { uUserId, uEvent }) config =
+  case uEvent of
+    EventMessage message ->
+      case message of
+        TextMessage { tmText } -> do
+          outMessage <- react config (InTextMessage tmText)
+          liftIO $ sendOutMessage token uUserId outMessage
+    CallbackQuery { cqId, cqData } -> do
+      outMessage <- react config (KeyboardKeyPushed cqData)
+      liftIO $ sendOutMessage token uUserId outMessage
+      liftIO $ answerCallbackQuery token cqId
 
 handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
 handleUpdates token updates config =
   case updates of
     [] -> return ()
-    (u:us) -> case updateMessage u of
-      Nothing -> do
-        liftIO $ print $ "Ignoring update: " ++ show u
-        handleUpdates token us config
-      Just message -> do
-        handleMessage token config message
-        handleUpdates token us config
+    (u:us) -> do
+      handleUpdate token u config
+      handleUpdates token us config
 
 runBot :: String -> Integer -> Config -> StateT Int IO ()
 runBot token offset config = do
-  liftIO $ print $ "Offset: " ++ show offset
+  liftIO $ putStrLn $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset
   case eitherUpdates of
     Left err      -> liftIO $ print err
     Right []      -> runBot token offset config
     Right updates -> do
       handleUpdates token updates config
-      let newOffset = updates & last & updateId & (+1)
+      let newOffset = updates & last & uId & (+1)
       runBot token newOffset config

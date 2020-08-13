@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 77b46577e10531421c63d0c9037bb450b162019c10039d101383c0ceb73fd6e2
+-- hash: ffaaa15646a51fd527a127b9dab15f5b355c6c860d30e011637d5b33ff22c4a4
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -29,6 +29,8 @@ library
   exposed-modules:
       Bot
       Telegram
+      TelegramBotTypes
+      TelegramTypes
   other-modules:
       Paths_haskell_echo_bot
   hs-source-dirs:
@@ -68,6 +70,8 @@ test-suite haskell-echo-bot-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      BotSpec
+      TelegramTypesSpec
       Paths_haskell_echo_bot
   hs-source-dirs:
       test
