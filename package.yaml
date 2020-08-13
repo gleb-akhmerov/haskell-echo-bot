@@ -28,8 +28,6 @@ dependencies:
 - http-conduit
 - bytestring
 - aeson
-- record-dot-preprocessor
-- record-hasfield
 
 library:
   source-dirs: src
