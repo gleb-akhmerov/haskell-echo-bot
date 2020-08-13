@@ -25,7 +25,17 @@ data Event
 
 data Message
    = TextMessage { tmText :: String }
-   | Animation { aFileId :: String }
+   | MediaMessage Media
+   deriving ( Show )
+
+data Media
+   = Media { mFileId :: String, mType :: MediaType }
+   deriving ( Show )
+
+data MediaType
+   = Animation
+   | Audio
+   | Document
    deriving ( Show )
 
 parseResult :: T.Result [T.Update] -> Either String [Update]
@@ -57,9 +67,13 @@ parseUpdate T.Update { T.uUpdateId } =
 parseMessage :: T.Message -> Either String Message
 parseMessage T.Message { T.mText = Just t } =
   Right TextMessage { tmText = t }
-parseMessage T.Message { T.mAnimation = Just a } =
-  Right Animation { aFileId = T.aFileId a }
-parseMessage m @ (T.Message _ Nothing Nothing) =
+parseMessage T.Message { T.mAnimation = Just m } =
+  Right $ MediaMessage $ Media { mFileId = T.animationFileId m, mType = Animation }
+parseMessage T.Message { T.mAudio = Just m } =
+  Right $ MediaMessage $ Media { mFileId = T.audioFileId m, mType = Audio }
+parseMessage T.Message { T.mDocument = Just m } =
+  Right $ MediaMessage $ Media { mFileId = T.documentFileId m, mType = Document }
+parseMessage m @ (T.Message _ Nothing Nothing Nothing Nothing) =
   Left $ "Can't parse: " ++ show m
 
 parseCallbackQuery :: T.CallbackQuery -> Event

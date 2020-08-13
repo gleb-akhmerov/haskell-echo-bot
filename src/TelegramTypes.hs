@@ -1,6 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module TelegramTypes where
 
@@ -36,6 +35,8 @@ data Message
        { mFrom :: User
        , mText :: Maybe String
        , mAnimation :: Maybe Animation
+       , mAudio :: Maybe Audio
+       , mDocument :: Maybe Document
        }
    deriving ( Generic, Show, Eq )
 
@@ -44,7 +45,15 @@ data User
    deriving ( Generic, Show, Eq )
 
 data Animation
-   = Animation { aFileId :: String }
+   = Animation { animationFileId :: String }
+   deriving ( Generic, Show, Eq )
+
+data Audio
+   = Audio { audioFileId :: String }
+   deriving ( Generic, Show, Eq )
+
+data Document
+   = Document { documentFileId :: String }
    deriving ( Generic, Show, Eq )
 
 instance FromJSON a => FromJSON (Result a) where
@@ -69,4 +78,12 @@ instance FromJSON User where
 
 instance FromJSON Animation where
   parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = camelTo2 '_' . drop 1 }
+                fieldLabelModifier = camelTo2 '_' . drop (length "Animation") }
+
+instance FromJSON Audio where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop (length "Audio") }
+
+instance FromJSON Document where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop (length "Document") }

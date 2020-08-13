@@ -11,6 +11,8 @@ import Data.Aeson ( decode, Value(..), object, (.=), toJSONList )
 import Bot
 import TelegramBotTypes
 import qualified TelegramTypes as T
+import Data.Text ( pack )
+import Data.Char ( toLower )
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -43,12 +45,18 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
-sendAnimation :: String -> Integer -> String -> IO ()
-sendAnimation token chatId fileId = do
+sendMedia :: String -> Integer -> Media -> IO ()
+sendMedia token chatId (Media { mType, mFileId }) = do
+  let typeName = case mType of
+        Animation -> "Animation"
+        Audio     -> "Audio"
+        Document  -> "Document"
+  let paramName = map toLower typeName
+  let method = "/send" ++ typeName
   _ <- httpLBS $
     requestJSON
-      ("https://api.telegram.org/bot" ++ token ++ "/sendAnimation")
-      (object ["chat_id" .= chatId, "animation" .= fileId])
+      ("https://api.telegram.org/bot" ++ token ++ method)
+      (object ["chat_id" .= chatId, pack paramName .= mFileId])
   return ()
 
 sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
@@ -84,8 +92,8 @@ sendOutMessage token userId outMessage =
       case message of
         TextMessage { tmText } ->
           forM_ (replicate n tmText) (sendMessage token userId)
-        Animation { aFileId } ->
-          forM_ (replicate n aFileId) (sendAnimation token userId)
+        MediaMessage media ->
+          forM_ (replicate n media) (sendMedia token userId)
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
@@ -98,8 +106,8 @@ handleUpdate token (Update { uUserId, uEvent }) config =
       outMessage <- case message of
         TextMessage { tmText } ->
           react config (InTextMessage tmText message)
-        a @ Animation {} ->
-          react config (InMediaMessage a)
+        m @ (MediaMessage _) ->
+          react config (InMediaMessage m)
       liftIO $ sendOutMessage token uUserId outMessage
     CallbackQuery { cqId, cqData } -> do
       outMessage <- react config (KeyboardKeyPushed cqData)
