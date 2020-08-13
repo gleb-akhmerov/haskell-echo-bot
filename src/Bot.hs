@@ -15,19 +15,19 @@ defaultConfig =
     , repeatKeyboardText = "How many times would you like me to repeat your messages?"
     }
 
-data InMessage a
-  = InTextMessage String a
-  | InMediaMessage a
+data InMessage echoable
+  = InTextMessage String echoable
+  | InMediaMessage echoable
   | KeyboardKeyPushed Int
   deriving (Show, Eq)
 
-data OutMessage a
-  = EchoTimes Int a
+data OutMessage echoable
+  = EchoTimes Int echoable
   | SendText String
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: Monad m => Config -> InMessage a -> StateT Int m (OutMessage a)
+react :: Monad m => Config -> InMessage echoable -> StateT Int m (OutMessage echoable)
 react config inMessage =
   case inMessage of
     InMediaMessage message -> do
