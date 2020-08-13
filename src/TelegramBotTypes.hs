@@ -25,6 +25,7 @@ data Event
 
 data Message
    = TextMessage { tmText :: String }
+   | Animation { aFileId :: String }
    deriving ( Show )
 
 parseResult :: T.Result [T.Update] -> Either String [Update]
@@ -56,7 +57,9 @@ parseUpdate T.Update { T.uUpdateId } =
 parseMessage :: T.Message -> Either String Message
 parseMessage T.Message { T.mText = Just t } =
   Right TextMessage { tmText = t }
-parseMessage m =
+parseMessage T.Message { T.mAnimation = Just a } =
+  Right Animation { aFileId = T.aFileId a }
+parseMessage m @ (T.Message _ Nothing Nothing) =
   Left $ "Can't parse: " ++ show m
 
 parseCallbackQuery :: T.CallbackQuery -> Event

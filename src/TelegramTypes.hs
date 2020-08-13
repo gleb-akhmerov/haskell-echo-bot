@@ -35,11 +35,16 @@ data Message
    = Message
        { mFrom :: User
        , mText :: Maybe String
+       , mAnimation :: Maybe Animation
        }
    deriving ( Generic, Show, Eq )
 
 data User
    = User { uId :: Integer }
+   deriving ( Generic, Show, Eq )
+
+data Animation
+   = Animation { aFileId :: String }
    deriving ( Generic, Show, Eq )
 
 instance FromJSON a => FromJSON (Result a) where
@@ -59,5 +64,9 @@ instance FromJSON Message where
                 fieldLabelModifier = camelTo2 '_' . drop 1 }
 
 instance FromJSON User where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop 1 }
+
+instance FromJSON Animation where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = camelTo2 '_' . drop 1 }

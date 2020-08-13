@@ -8,7 +8,7 @@ import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
 import Data.Aeson ( decode, Value(..), object, (.=), toJSONList )
-import Bot ( react, InMessage(..), OutMessage(..), Config )
+import Bot
 import TelegramBotTypes
 import qualified TelegramTypes as T
 
@@ -43,6 +43,14 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
+sendAnimation :: String -> Integer -> String -> IO ()
+sendAnimation token chatId fileId = do
+  _ <- httpLBS $
+    requestJSON
+      ("https://api.telegram.org/bot" ++ token ++ "/sendAnimation")
+      (object ["chat_id" .= chatId, "animation" .= fileId])
+  return ()
+
 sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
 sendKeyboard token userId text buttons = do
   let stringButtons = map show buttons
@@ -67,11 +75,17 @@ answerCallbackQuery token queryId = do
       (object ["callback_query_id" .= queryId])
   return ()
 
-sendOutMessage :: String -> Integer -> OutMessage -> IO ()
+sendOutMessage :: String -> Integer -> OutMessage Message -> IO ()
 sendOutMessage token userId outMessage =
   case outMessage of
-    SendMessageTimes n sendText ->
-      forM_ (replicate n sendText) (sendMessage token userId)
+    SendText text ->
+      sendMessage token userId text
+    EchoTimes n message ->
+      case message of
+        TextMessage { tmText } ->
+          forM_ (replicate n tmText) (sendMessage token userId)
+        Animation { aFileId } ->
+          forM_ (replicate n aFileId) (sendAnimation token userId)
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
@@ -80,11 +94,13 @@ handleUpdate _ (u @ UnknownUpdate {}) _ =
   liftIO $ putStrLn $ "Ignoring update: " ++ show u
 handleUpdate token (Update { uUserId, uEvent }) config =
   case uEvent of
-    EventMessage message ->
-      case message of
-        TextMessage { tmText } -> do
-          outMessage <- react config (InTextMessage tmText)
-          liftIO $ sendOutMessage token uUserId outMessage
+    EventMessage message -> do
+      outMessage <- case message of
+        TextMessage { tmText } ->
+          react config (InTextMessage tmText message)
+        a @ Animation {} ->
+          react config (InMediaMessage a)
+      liftIO $ sendOutMessage token uUserId outMessage
     CallbackQuery { cqId, cqData } -> do
       outMessage <- react config (KeyboardKeyPushed cqData)
       liftIO $ sendOutMessage token uUserId outMessage
