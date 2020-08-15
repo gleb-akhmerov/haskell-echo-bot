@@ -22,12 +22,9 @@ spec = do
               , uMessage =
                   Just
                   ( Message
-                    { mFrom = User {uId = 123456789}
+                    { mMessageId = 603
+                    , mFrom = User {uId = 123456789}
                     , mText = Just "/help"
-                    , mAnimation = Nothing
-                    , mAudio = Nothing
-                    , mDocument = Nothing
-                    , mSticker = Nothing
                     }
                   )
               , uCallbackQuery = Nothing
