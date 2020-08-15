@@ -7,12 +7,13 @@ import Data.Function ( (&) )
 import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
-import Data.Aeson ( decode, Value(..), object, (.=), toJSONList )
+import Data.Aeson ( decode, Value(..), object, (.=), toJSONList, eitherDecode )
 import Bot
 import TelegramBotTypes
 import qualified TelegramTypes as T
-import Data.Text ( pack )
-import Data.Char ( toLower )
+import Data.ByteString.Lazy.Char8 ( unpack )
+import Data.Either ( fromLeft )
+import Prelude hiding ( id )
 
 requestJSON :: String -> Value -> Request
 requestJSON url json =
@@ -33,7 +34,7 @@ getUpdates token offset = do
   return $
     case maybeResult of
       Nothing ->
-        Left $ "Unable to parse json from getUpdates: " ++ (show json)
+        Left $ "Unable to parse json from getUpdates:\n" ++ (unpack json) ++ "\n" ++ fromLeft "wtf" (eitherDecode json :: Either String (T.Result [T.Update]))
       Just r ->
         parseResult r
 
@@ -45,15 +46,15 @@ sendMessage token chatId text = do
       (object ["chat_id" .= chatId, "text" .= text])
   return ()
 
-sendMedia :: String -> Integer -> Media -> IO ()
-sendMedia token chatId (Media { mType, mFileId }) = do
-  let typeName = show mType
-  let paramName = map toLower typeName
-  let method = "/send" ++ typeName
+forwardMessage :: String -> Integer -> Integer -> IO ()
+forwardMessage token chatId messageId = do
   _ <- httpLBS $
     requestJSON
-      ("https://api.telegram.org/bot" ++ token ++ method)
-      (object ["chat_id" .= chatId, pack paramName .= mFileId])
+      ("https://api.telegram.org/bot" ++ token ++ "/forwardMessage")
+      (object [ "chat_id" .= chatId
+              , "from_chat_id" .= chatId
+              , "message_id" .= messageId
+              ])
   return ()
 
 sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
@@ -80,17 +81,13 @@ answerCallbackQuery token queryId = do
       (object ["callback_query_id" .= queryId])
   return ()
 
-sendOutMessage :: String -> Integer -> OutMessage Message -> IO ()
+sendOutMessage :: String -> Integer -> OutMessage Integer -> IO ()
 sendOutMessage token userId outMessage =
   case outMessage of
     SendText text ->
       sendMessage token userId text
-    EchoTimes n message ->
-      case message of
-        TextMessage { tmText } ->
-          forM_ (replicate n tmText) (sendMessage token userId)
-        MediaMessage media ->
-          forM_ (replicate n media) (sendMedia token userId)
+    EchoTimes n messageId ->
+      forM_ (replicate n messageId) (forwardMessage token userId)
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
@@ -99,12 +96,12 @@ handleUpdate _ (u @ UnknownUpdate {}) _ =
   liftIO $ putStrLn $ "Ignoring update: " ++ show u
 handleUpdate token (Update { uUserId, uEvent }) config =
   case uEvent of
-    EventMessage message -> do
+    EventMessage (MessageWithId id message) -> do
       outMessage <- case message of
         TextMessage { tmText } ->
-          react config (InTextMessage tmText message)
-        m @ (MediaMessage _) ->
-          react config (InMediaMessage m)
+          react config (InTextMessage tmText id)
+        MediaMessage ->
+          react config (InMediaMessage id)
       liftIO $ sendOutMessage token uUserId outMessage
     CallbackQuery { cqId, cqData } -> do
       outMessage <- react config (KeyboardKeyPushed cqData)
@@ -124,7 +121,7 @@ runBot token offset config = do
   liftIO $ putStrLn $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset
   case eitherUpdates of
-    Left err      -> liftIO $ print err
+    Left err      -> liftIO $ putStrLn err
     Right []      -> runBot token offset config
     Right updates -> do
       handleUpdates token updates config

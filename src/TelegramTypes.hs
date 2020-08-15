@@ -32,33 +32,14 @@ data CallbackQuery
 
 data Message
    = Message
-       { mFrom :: User
+       { mMessageId :: Integer
+       , mFrom :: User
        , mText :: Maybe String
-       , mAnimation :: Maybe Animation
-       , mAudio :: Maybe Audio
-       , mDocument :: Maybe Document
-       , mSticker :: Maybe Sticker
        }
    deriving ( Generic, Show, Eq )
 
 data User
    = User { uId :: Integer }
-   deriving ( Generic, Show, Eq )
-
-data Animation
-   = Animation { animationFileId :: String }
-   deriving ( Generic, Show, Eq )
-
-data Audio
-   = Audio { audioFileId :: String }
-   deriving ( Generic, Show, Eq )
-
-data Document
-   = Document { documentFileId :: String }
-   deriving ( Generic, Show, Eq )
-
-data Sticker
-   = Sticker { stickerFileId :: String }
    deriving ( Generic, Show, Eq )
 
 instance FromJSON a => FromJSON (Result a) where
@@ -80,19 +61,3 @@ instance FromJSON Message where
 instance FromJSON User where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = camelTo2 '_' . drop 1 }
-
-instance FromJSON Animation where
-  parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = camelTo2 '_' . drop (length "Animation") }
-
-instance FromJSON Audio where
-  parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = camelTo2 '_' . drop (length "Audio") }
-
-instance FromJSON Document where
-  parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = camelTo2 '_' . drop (length "Document") }
-
-instance FromJSON Sticker where
-  parseJSON = genericParseJSON defaultOptions {
-                fieldLabelModifier = camelTo2 '_' . drop (length "Sticker") }

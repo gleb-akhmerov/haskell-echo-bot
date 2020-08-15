@@ -16,27 +16,20 @@ data Update
    deriving ( Show )
 
 data Event
-   = EventMessage Message
+   = EventMessage MessageWithId
    | CallbackQuery
        { cqId :: String
        , cqData :: Int
        }
    deriving ( Show )
 
+data MessageWithId
+   = MessageWithId Integer Message
+   deriving ( Show )
+
 data Message
    = TextMessage { tmText :: String }
-   | MediaMessage Media
-   deriving ( Show )
-
-data Media
-   = Media { mFileId :: String, mType :: MediaType }
-   deriving ( Show )
-
-data MediaType
-   = Animation
-   | Audio
-   | Document
-   | Sticker
+   | MediaMessage
    deriving ( Show )
 
 parseResult :: T.Result [T.Update] -> Either String [Update]
@@ -54,7 +47,8 @@ parseUpdate T.Update { T.uUpdateId, T.uMessage = Just m } =
       UnknownUpdate { uId = uUpdateId }
     Right message ->
       Update { uId = uUpdateId
-             , uEvent = EventMessage message
+             , uEvent = EventMessage $
+                          MessageWithId (T.mMessageId m) message
              , uUserId = m & T.mFrom & T.uId
              }
 parseUpdate T.Update { T.uUpdateId, T.uCallbackQuery = Just cq } =
@@ -68,16 +62,8 @@ parseUpdate T.Update { T.uUpdateId } =
 parseMessage :: T.Message -> Either String Message
 parseMessage T.Message { T.mText = Just t } =
   Right TextMessage { tmText = t }
-parseMessage T.Message { T.mAnimation = Just m } =
-  Right $ MediaMessage $ Media { mFileId = T.animationFileId m, mType = Animation }
-parseMessage T.Message { T.mAudio = Just m } =
-  Right $ MediaMessage $ Media { mFileId = T.audioFileId m, mType = Audio }
-parseMessage T.Message { T.mDocument = Just m } =
-  Right $ MediaMessage $ Media { mFileId = T.documentFileId m, mType = Document }
-parseMessage T.Message { T.mSticker = Just m } =
-  Right $ MediaMessage $ Media { mFileId = T.stickerFileId m, mType = Sticker }
-parseMessage m @ (T.Message _ Nothing Nothing Nothing Nothing Nothing) =
-  Left $ "Can't parse: " ++ show m
+parseMessage _ =
+  Right $ MediaMessage
 
 parseCallbackQuery :: T.CallbackQuery -> Event
 parseCallbackQuery cq =
