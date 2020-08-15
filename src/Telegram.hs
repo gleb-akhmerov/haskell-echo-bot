@@ -30,11 +30,11 @@ getUpdates token offset = do
               , "timeout" .= (60 :: Integer)
               ])
   let json = getResponseBody response
-  let maybeResult = decode json :: Maybe (T.Result [T.Update])
+  let maybeResult = decode json :: Maybe T.Result
   return $
     case maybeResult of
       Nothing ->
-        Left $ "Unable to parse json from getUpdates:\n" ++ (unpack json) ++ "\n" ++ fromLeft "wtf" (eitherDecode json :: Either String (T.Result [T.Update]))
+        Left $ "Unable to parse json from getUpdates:\n" ++ (unpack json) ++ "\n" ++ fromLeft "wtf" (eitherDecode json :: Either String T.Result)
       Just r ->
         parseResult r
 

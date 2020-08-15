@@ -6,11 +6,11 @@ module TelegramTypes where
 import GHC.Generics ( Generic )
 import Data.Aeson ( FromJSON(..), camelTo2, fieldLabelModifier, genericParseJSON, defaultOptions )
 
-data Result a
+data Result
    = Result
        { rOk :: Bool
        , rDescription :: Maybe String
-       , rResult :: Maybe a
+       , rResult :: Maybe [Update]
        }
    deriving ( Generic, Show, Eq )
 
@@ -42,7 +42,7 @@ data User
    = User { uId :: Integer }
    deriving ( Generic, Show, Eq )
 
-instance FromJSON a => FromJSON (Result a) where
+instance FromJSON Result where
   parseJSON = genericParseJSON defaultOptions {
                 fieldLabelModifier = camelTo2 '_' . drop 1 }
 

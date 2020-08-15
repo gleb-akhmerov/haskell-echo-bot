@@ -32,7 +32,7 @@ data Message
    | MediaMessage
    deriving ( Show )
 
-parseResult :: T.Result [T.Update] -> Either String [Update]
+parseResult :: T.Result -> Either String [Update]
 parseResult T.Result { T.rOk = True, T.rResult = Just r } =
   Right $ map parseUpdate r
 parseResult T.Result { T.rOk = False, T.rDescription = Just d } =
