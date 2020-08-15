@@ -6,23 +6,18 @@ module Telegram where
 import Data.Function ( (&) )
 import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
-import Network.HTTP.Simple ( httpLBS, setRequestBodyJSON, getResponseBody, parseRequest_, setRequestMethod, Request )
-import Data.Aeson ( decode, Value(..), object, (.=), toJSONList, eitherDecode )
+import Network.HTTP.Simple ( httpLBS, getResponseBody )
+import Data.Aeson ( decode, object, (.=), toJSONList, eitherDecode )
 import Bot
 import TelegramBotTypes
 import qualified TelegramTypes as T
 import Data.ByteString.Lazy.Char8 ( unpack )
 import Data.Either ( fromLeft )
 import Prelude hiding ( id )
+import Util ( requestJSON )
 
-requestJSON :: String -> Value -> Request
-requestJSON url json =
-  parseRequest_ url
-    & setRequestMethod "POST"
-    & setRequestBodyJSON json
-
-getUpdates :: String -> Integer-> IO (Either String [Update])
-getUpdates token offset = do
+getUpdates :: String -> UpdateId -> IO (Either String [Update])
+getUpdates token (UpdateId offset) = do
   response <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/getUpdates")
@@ -38,50 +33,48 @@ getUpdates token offset = do
       Just r ->
         parseResult r
 
-sendMessage :: String -> Integer -> String -> IO ()
-sendMessage token chatId text = do
+sendMessage :: String -> UserId -> String -> IO ()
+sendMessage token (UserId userId) text = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/sendMessage")
-      (object ["chat_id" .= chatId, "text" .= text])
+      (object ["chat_id" .= userId, "text" .= text])
   return ()
 
-forwardMessage :: String -> Integer -> Integer -> IO ()
-forwardMessage token chatId messageId = do
+forwardMessage :: String -> UserId -> MessageId -> IO ()
+forwardMessage token (UserId userId) (MessageId messageId) = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/forwardMessage")
-      (object [ "chat_id" .= chatId
-              , "from_chat_id" .= chatId
+      (object [ "chat_id" .= userId
+              , "from_chat_id" .= userId
               , "message_id" .= messageId
               ])
   return ()
 
-sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
-sendKeyboard token userId text buttons = do
+sendKeyboard :: String -> UserId -> String -> [Int] -> IO ()
+sendKeyboard token (UserId userId) text buttons = do
   let stringButtons = map show buttons
-  let json =
-        (object [ "chat_id" .= userId
-                , "text" .= text
-                , "reply_markup" .=
-                  object ["inline_keyboard" .=
-                    toJSONList [map (\b -> object ["text" .= b, "callback_data" .= b]) stringButtons]]
-                ])
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/sendMessage")
-      json
+      (object [ "chat_id" .= userId
+              , "text" .= text
+              , "reply_markup" .=
+                object ["inline_keyboard" .=
+                        toJSONList [map (\b -> object ["text" .= b, "callback_data" .= b]) stringButtons]]
+              ])
   return ()      
 
-answerCallbackQuery :: String -> String -> IO ()
-answerCallbackQuery token queryId = do
+answerCallbackQuery :: String -> CallbackQueryId -> IO ()
+answerCallbackQuery token (CallbackQueryId queryId) = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/answerCallbackQuery")
       (object ["callback_query_id" .= queryId])
   return ()
 
-sendOutMessage :: String -> Integer -> OutMessage Integer -> IO ()
+sendOutMessage :: String -> UserId -> OutMessage MessageId -> IO ()
 sendOutMessage token userId outMessage =
   case outMessage of
     SendText text ->
@@ -116,7 +109,7 @@ handleUpdates token updates config =
       handleUpdate token u config
       handleUpdates token us config
 
-runBot :: String -> Integer -> Config -> StateT Int IO ()
+runBot :: String -> UpdateId -> Config -> StateT Int IO ()
 runBot token offset config = do
   liftIO $ putStrLn $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset
@@ -125,5 +118,5 @@ runBot token offset config = do
     Right []      -> runBot token offset config
     Right updates -> do
       handleUpdates token updates config
-      let newOffset = updates & last & uId & (+1)
+      let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
       runBot token newOffset config

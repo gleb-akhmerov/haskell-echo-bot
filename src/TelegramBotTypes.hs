@@ -5,26 +5,31 @@ module TelegramBotTypes where
 import Data.Function ( (&) )
 import qualified TelegramTypes as T
 
+newtype UpdateId = UpdateId { unUpdateId :: Integer } deriving ( Show )
+newtype UserId = UserId { unUserId :: Integer } deriving ( Show )
+newtype CallbackQueryId = CallbackQueryId { unCallbackQueryId :: String } deriving ( Show )
+newtype MessageId = MessageId { unMessageId :: Integer } deriving ( Show )
+
 data Update
    = Update
-       { uId :: Integer
-       , uUserId :: Integer
+       { uId :: UpdateId
+       , uUserId :: UserId
        , uEvent :: Event
        }
    | UnknownUpdate
-       { uId :: Integer }
+       { uId :: UpdateId }
    deriving ( Show )
 
 data Event
    = EventMessage MessageWithId
    | CallbackQuery
-       { cqId :: String
+       { cqId :: CallbackQueryId
        , cqData :: Int
        }
    deriving ( Show )
 
 data MessageWithId
-   = MessageWithId Integer Message
+   = MessageWithId MessageId Message
    deriving ( Show )
 
 data Message
@@ -44,20 +49,20 @@ parseUpdate :: T.Update -> Update
 parseUpdate T.Update { T.uUpdateId, T.uMessage = Just m } =
   case parseMessage m of
     Left _ ->
-      UnknownUpdate { uId = uUpdateId }
+      UnknownUpdate { uId = UpdateId uUpdateId }
     Right message ->
-      Update { uId = uUpdateId
+      Update { uId = UpdateId uUpdateId
              , uEvent = EventMessage $
-                          MessageWithId (T.mMessageId m) message
-             , uUserId = m & T.mFrom & T.uId
+                          MessageWithId (MessageId (T.mMessageId m)) message
+             , uUserId = UserId (m & T.mFrom & T.uId)
              }
 parseUpdate T.Update { T.uUpdateId, T.uCallbackQuery = Just cq } =
-  Update { uId = uUpdateId
+  Update { uId = UpdateId uUpdateId
          , uEvent = parseCallbackQuery cq
-         , uUserId = cq & T.cqFrom & T.uId
+         , uUserId = UserId (cq & T.cqFrom & T.uId)
          }
 parseUpdate T.Update { T.uUpdateId } =
-  UnknownUpdate { uId = uUpdateId }
+  UnknownUpdate { uId = UpdateId uUpdateId }
 
 parseMessage :: T.Message -> Either String Message
 parseMessage T.Message { T.mText = Just t } =
@@ -67,4 +72,6 @@ parseMessage _ =
 
 parseCallbackQuery :: T.CallbackQuery -> Event
 parseCallbackQuery cq =
-  CallbackQuery { cqId = T.cqId cq, cqData = cq & T.cqData & read }
+  CallbackQuery { cqId = CallbackQueryId (T.cqId cq)
+                , cqData = cq & T.cqData & read
+                }

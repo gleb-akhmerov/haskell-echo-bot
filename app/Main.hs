@@ -6,6 +6,7 @@ import Control.Monad.State ( evalStateT )
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile )
 import qualified Telegram
+import TelegramBotTypes ( UpdateId(..) )
 import Bot ( defaultConfig )
 
 data AuthConfig = AuthConfig
@@ -23,4 +24,4 @@ main = do
   configText <- T.readFile "config.ini"
   case parseIniFile configText configParser of
     Left err -> putStrLn err
-    Right config -> evalStateT (Telegram.runBot (telegramToken config) 0 defaultConfig) 1
+    Right config -> evalStateT (Telegram.runBot (telegramToken config) (UpdateId 0) defaultConfig) 1
