@@ -5,7 +5,7 @@
 module VkTypes where
 
 import GHC.Generics ( Generic )
-import Data.Aeson ( FromJSON(..), camelTo2, fieldLabelModifier, genericParseJSON, defaultOptions, (.:), withObject )
+import Data.Aeson ( FromJSON(..), camelTo2, fieldLabelModifier, genericParseJSON, defaultOptions, (.:), (.:!), withObject )
 import Data.Aeson.Types ( Parser, Value )
 
 data Response
@@ -37,8 +37,9 @@ data Update
 data Object
    = Message
        { mId :: Integer
-       , mBody :: String
+       , mText :: String
        , mUserId :: Integer
+       , mPayload :: Maybe Int
        }
    | UnknownObject
    deriving ( Show, Eq )
@@ -66,7 +67,10 @@ instance FromJSON Update where
     return $ Update {..}
 
 parseMessage :: Value -> Parser Object
-parseMessage = withObject "Message" $ \o ->
-  Message <$> o .: "id"
-          <*> o .: "body"
-          <*> o .: "user_id"
+parseMessage = withObject "Message" $ \o -> do
+  mes <- o .: "message"
+  Message <$> mes .:  "id"
+          <*> mes .:  "text"
+          <*> mes .:  "from_id"
+          <*> do payload <- mes .:! "payload"
+                 return $ fmap read payload

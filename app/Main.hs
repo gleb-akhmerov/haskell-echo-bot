@@ -6,6 +6,7 @@ module Main where
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile, number )
 import qualified Vk
+import Bot
 
 data AuthConfig
    = AuthConfig
@@ -29,4 +30,4 @@ main = do
     Left err ->
       putStrLn err
     Right config ->
-      Vk.runBot (vkToken config) (vkGroupId config)
+      Vk.runBot defaultConfig 1 (vkToken config) (vkGroupId config)

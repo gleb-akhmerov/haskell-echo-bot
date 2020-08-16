@@ -29,6 +29,7 @@ dependencies:
 - bytestring
 - aeson
 - either
+- random
 
 library:
   source-dirs: src
