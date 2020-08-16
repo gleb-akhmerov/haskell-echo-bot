@@ -4,7 +4,7 @@
 module Telegram where
 
 import Data.Function ( (&) )
-import Control.Monad ( forM_ )
+import Control.Monad ( replicateM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, getResponseBody )
 import Data.Aeson ( object, (.=), toJSONList )
@@ -71,7 +71,7 @@ sendOutMessage token userId outMessage =
     SendText text ->
       sendMessage token userId text
     EchoTimes n messageId ->
-      forM_ (replicate n messageId) (forwardMessage token userId)
+      replicateM_ n (forwardMessage token userId messageId)
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
