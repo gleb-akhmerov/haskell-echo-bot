@@ -1,27 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Main where
 
-import Control.Monad.State ( evalStateT )
 import qualified Data.Text.IO as T
-import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile )
-import qualified Telegram
-import TelegramBotTypes ( UpdateId(..) )
-import Bot ( defaultConfig )
+import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile, number )
+import qualified Vk
 
-data AuthConfig = AuthConfig
-  { telegramToken :: String }
+data AuthConfig
+   = AuthConfig
+       { telegramToken :: String
+       , vkToken :: String
+       , vkGroupId :: Integer
+       }
   deriving Show
 
 configParser :: IniParser AuthConfig
 configParser = do
-  section "Telegram" $ do
-    tgToken <- fieldOf "token" string
-    return AuthConfig { telegramToken = tgToken }
+  telegramToken <- section "Telegram" $ fieldOf "token" string
+  vkToken <- section "VK" $ fieldOf "token" string
+  vkGroupId <- section "VK" $ fieldOf "groupId" number
+  return AuthConfig {..}
 
 main :: IO ()
 main = do
   configText <- T.readFile "config.ini"
   case parseIniFile configText configParser of
-    Left err -> putStrLn err
-    Right config -> evalStateT (Telegram.runBot (telegramToken config) (UpdateId 0) defaultConfig) 1
+    Left err ->
+      putStrLn err
+    Right config ->
+      Vk.runBot (vkToken config) (vkGroupId config)

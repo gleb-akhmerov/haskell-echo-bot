@@ -8,6 +8,18 @@ import GHC.Generics ( Generic )
 import Data.Aeson ( FromJSON(..), camelTo2, fieldLabelModifier, genericParseJSON, defaultOptions, (.:), withObject )
 import Data.Aeson.Types ( Parser, Value )
 
+data Response
+   = Response { rResponse :: LongPollServer }
+   deriving ( Generic, Show, Eq )
+
+data LongPollServer
+   = LongPollServer
+       { lpsKey :: String
+       , lpsServer :: String
+       , lpsTs :: String
+       }
+   deriving ( Generic, Show, Eq )
+
 data Result
    = Result
        { rTs :: String
@@ -26,9 +38,18 @@ data Object
    = Message
        { mId :: Integer
        , mBody :: String
+       , mUserId :: Integer
        }
    | UnknownObject
    deriving ( Show, Eq )
+
+instance FromJSON Response where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop 1 }
+
+instance FromJSON LongPollServer where
+  parseJSON = genericParseJSON defaultOptions {
+                fieldLabelModifier = camelTo2 '_' . drop 3 }
 
 instance FromJSON Result where
   parseJSON = genericParseJSON defaultOptions {
@@ -48,3 +69,4 @@ parseMessage :: Value -> Parser Object
 parseMessage = withObject "Message" $ \o ->
   Message <$> o .: "id"
           <*> o .: "body"
+          <*> o .: "user_id"

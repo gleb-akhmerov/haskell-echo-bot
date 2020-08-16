@@ -1,2 +1,6 @@
 [Telegram]
 token = CHANGEME
+
+[VK]
+token = CHANGEME
+groupId = CHANGEME

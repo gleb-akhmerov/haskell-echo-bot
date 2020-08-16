@@ -7,14 +7,11 @@ import Data.Function ( (&) )
 import Control.Monad ( forM_ )
 import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, getResponseBody )
-import Data.Aeson ( decode, object, (.=), toJSONList, eitherDecode )
+import Data.Aeson ( object, (.=), toJSONList )
 import Bot
 import TelegramBotTypes
-import qualified TelegramTypes as T
-import Data.ByteString.Lazy.Char8 ( unpack )
-import Data.Either ( fromLeft )
 import Prelude hiding ( id )
-import Util ( requestJSON )
+import Util ( requestJSON, verboseEitherDecode )
 
 getUpdates :: String -> UpdateId -> IO (Either String [Update])
 getUpdates token (UpdateId offset) = do
@@ -22,16 +19,10 @@ getUpdates token (UpdateId offset) = do
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/getUpdates")
       (object [ "offset" .= offset
-              , "timeout" .= (60 :: Integer)
+              , "timeout" .= (25 :: Integer)
               ])
   let json = getResponseBody response
-  let maybeResult = decode json :: Maybe T.Result
-  return $
-    case maybeResult of
-      Nothing ->
-        Left $ "Unable to parse json from getUpdates:\n" ++ (unpack json) ++ "\n" ++ fromLeft "wtf" (eitherDecode json :: Either String T.Result)
-      Just r ->
-        parseResult r
+  return $ verboseEitherDecode json >>= parseResult
 
 sendMessage :: String -> UserId -> String -> IO ()
 sendMessage token (UserId userId) text = do

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e5ef6f1e2bd2f17d9fd51844b796e5e7ab7f7ba3c03d35c0f8dab0e10627b80a
+-- hash: fbe5f209b6f29504053a22bb9be2411c116fef4fd7e298bc132634a7aef76144
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       TelegramBotTypes
       TelegramTypes
       Util
+      Vk
       VkTypes
   other-modules:
       Paths_haskell_echo_bot
@@ -43,6 +44,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , config-ini
+    , either
     , hspec
     , http-conduit
     , mtl
@@ -61,6 +63,7 @@ executable haskell-echo-bot-exe
     , base >=4.7 && <5
     , bytestring
     , config-ini
+    , either
     , haskell-echo-bot
     , hspec
     , http-conduit
@@ -84,6 +87,7 @@ test-suite haskell-echo-bot-test
     , base >=4.7 && <5
     , bytestring
     , config-ini
+    , either
     , haskell-echo-bot
     , hspec
     , http-conduit
