@@ -1,17 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Control.Monad.State ( StateT, liftIO )
-import Bot
+import Control.Monad.State ( MonadState )
+import Control.Monad.IO.Class ( MonadIO, liftIO )
+import Control.Monad.Reader ( MonadReader, ask )
+import Bot ( react, Config, InMessage(..), OutMessage(..) )
 import Telegram.BotTypes
 import Telegram.Api
 
-sendOutMessage :: Token -> UserId -> OutMessage MessageId -> IO ()
-sendOutMessage token userId outMessage =
+data TelegramConfig
+   = TelegramConfig
+       { tcToken :: Token
+       , tcBotConfig :: Config
+       }
+
+sendOutMessage :: (MonadReader TelegramConfig m, MonadIO m) => UserId -> OutMessage MessageId -> m ()
+sendOutMessage userId outMessage = do
+  token <- tcToken <$> ask
   case outMessage of
     SendText text ->
       sendMessage token userId text
@@ -20,12 +30,13 @@ sendOutMessage token userId outMessage =
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: Config -> Token -> Update -> StateT Int IO ()
-handleUpdate config token update =
+handleUpdate :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => Update -> m ()
+handleUpdate update =
   case update of
     UnknownUpdate {} ->
       liftIO $ putStrLn $ "Ignoring update: " ++ show update
-    Update { uUserId, uEvent } ->
+    Update { uUserId, uEvent } -> do
+      config <- tcBotConfig <$> ask
       case uEvent of
         EventMessage (MessageWithId mesId message) -> do
           outMessage <- case message of
@@ -33,28 +44,28 @@ handleUpdate config token update =
               react config (InTextMessage tmText mesId)
             MediaMessage ->
               react config (InMediaMessage mesId)
-          liftIO $ sendOutMessage token uUserId outMessage
+          sendOutMessage uUserId outMessage
         CallbackQuery { cqId, cqData } -> do
           outMessage <- react config (KeyboardKeyPushed cqData)
-          liftIO $ sendOutMessage token uUserId outMessage
-          liftIO $ answerCallbackQuery token cqId
+          sendOutMessage uUserId outMessage
+          token <- tcToken <$> ask
+          answerCallbackQuery token cqId
 
-handleUpdates :: Config -> Token -> [Update] -> StateT Int IO ()
-handleUpdates config token updates =
-  case updates of
-    [] -> return ()
-    (u:us) -> do
-      handleUpdate  config token u
-      handleUpdates config token us
+handleUpdates :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => [Update] -> m ()
+handleUpdates [] = return ()
+handleUpdates (u:us) = do
+  handleUpdate  u
+  handleUpdates us
 
-runBot :: Config -> Token -> UpdateId -> StateT Int IO ()
-runBot config token offset = do
+runBot :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => UpdateId -> m ()
+runBot offset = do
+  token <- tcToken <$> ask
   liftIO $ putStrLn $ "Offset: " ++ show offset
-  eitherUpdates <- liftIO $ getUpdates token offset
+  eitherUpdates <- getUpdates token offset
   case eitherUpdates of
     Left err      -> liftIO $ putStrLn err
-    Right []      -> runBot config token offset
+    Right []      -> runBot offset
     Right updates -> do
-      handleUpdates config token updates
+      handleUpdates updates
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
-      runBot config token newOffset
+      runBot newOffset

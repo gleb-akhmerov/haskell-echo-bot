@@ -1,8 +1,9 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Bot where
 
-import Control.Monad.State (StateT, get, put)
+import Control.Monad.State ( get, put, MonadState )
 
 data Config = Config { helpText :: String
                      , repeatKeyboardText :: String
@@ -27,7 +28,7 @@ data OutMessage a
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: Monad m => Config -> InMessage a -> StateT Int m (OutMessage a)
+react :: MonadState Int m => Config -> InMessage a -> m (OutMessage a)
 react config inMessage =
   case inMessage of
     InMediaMessage message -> do

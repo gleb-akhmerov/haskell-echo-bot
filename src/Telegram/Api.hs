@@ -7,10 +7,11 @@ import Network.HTTP.Simple ( httpLBS, getResponseBody )
 import Data.Aeson ( object, (.=), toJSONList )
 import Telegram.BotTypes
 import Util ( requestJSON, verboseEitherDecode )
+import Control.Monad.IO.Class ( MonadIO )
 
 data Token = Token String
 
-getUpdates :: Token -> UpdateId -> IO (Either String [Update])
+getUpdates :: MonadIO m => Token -> UpdateId -> m (Either String [Update])
 getUpdates (Token token) (UpdateId offset) = do
   response <- httpLBS $
     requestJSON
@@ -21,7 +22,7 @@ getUpdates (Token token) (UpdateId offset) = do
   let json = getResponseBody response
   return $ verboseEitherDecode json >>= parseResult
 
-sendMessage :: Token -> UserId -> String -> IO ()
+sendMessage :: MonadIO m => Token -> UserId -> String -> m ()
 sendMessage (Token token) (UserId userId) text = do
   _ <- httpLBS $
     requestJSON
@@ -29,7 +30,7 @@ sendMessage (Token token) (UserId userId) text = do
       (object ["chat_id" .= userId, "text" .= text])
   return ()
 
-forwardMessage :: Token -> UserId -> MessageId -> IO ()
+forwardMessage :: MonadIO m => Token -> UserId -> MessageId -> m ()
 forwardMessage (Token token) (UserId userId) (MessageId messageId) = do
   _ <- httpLBS $
     requestJSON
@@ -40,7 +41,7 @@ forwardMessage (Token token) (UserId userId) (MessageId messageId) = do
               ])
   return ()
 
-sendKeyboard :: Token -> UserId -> String -> [Int] -> IO ()
+sendKeyboard :: MonadIO m => Token -> UserId -> String -> [Int] -> m ()
 sendKeyboard (Token token) (UserId userId) text buttons = do
   let stringButtons = map show buttons
   _ <- httpLBS $
@@ -54,7 +55,7 @@ sendKeyboard (Token token) (UserId userId) text buttons = do
               ])
   return ()      
 
-answerCallbackQuery :: Token -> CallbackQueryId -> IO ()
+answerCallbackQuery :: MonadIO m => Token -> CallbackQueryId -> m ()
 answerCallbackQuery (Token token) (CallbackQueryId queryId) = do
   _ <- httpLBS $
     requestJSON
