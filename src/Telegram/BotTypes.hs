@@ -1,9 +1,9 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module TelegramBotTypes where
+module Telegram.BotTypes where
 
 import Data.Function ( (&) )
-import qualified TelegramTypes as T
+import qualified Telegram.ApiTypes as T
 
 newtype UpdateId = UpdateId { unUpdateId :: Integer } deriving ( Show )
 newtype UserId = UserId { unUserId :: Integer } deriving ( Show )

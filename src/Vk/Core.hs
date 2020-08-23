@@ -1,10 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Vk where
+module Vk.Core where
 
 import Network.HTTP.Simple ( httpLBS, getResponseBody )
-import VkTypes
+import Vk.Types
 import Util ( requestQuery, verboseEitherDecode )
 import Bot
 import Control.Monad.State ( runState )

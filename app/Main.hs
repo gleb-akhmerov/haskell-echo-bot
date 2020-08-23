@@ -5,7 +5,7 @@ module Main where
 
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile, number )
-import qualified Vk
+import qualified Vk.Core as Vk
 import Bot
 
 data AuthConfig

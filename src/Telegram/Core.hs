@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Telegram where
+module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
@@ -9,7 +9,7 @@ import Control.Monad.State ( StateT, liftIO )
 import Network.HTTP.Simple ( httpLBS, getResponseBody )
 import Data.Aeson ( object, (.=), toJSONList )
 import Bot
-import TelegramBotTypes
+import Telegram.BotTypes
 import Prelude hiding ( id )
 import Util ( requestJSON, verboseEitherDecode )
 
