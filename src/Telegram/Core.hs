@@ -11,7 +11,7 @@ import Telegram.BotTypes
 import Telegram.Api
 import Prelude hiding ( id )
 
-sendOutMessage :: String -> UserId -> OutMessage MessageId -> IO ()
+sendOutMessage :: Token -> UserId -> OutMessage MessageId -> IO ()
 sendOutMessage token userId outMessage =
   case outMessage of
     SendText text ->
@@ -21,7 +21,7 @@ sendOutMessage token userId outMessage =
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: String -> Update -> Config -> StateT Int IO ()
+handleUpdate :: Token -> Update -> Config -> StateT Int IO ()
 handleUpdate _ (u @ UnknownUpdate {}) _ =
   liftIO $ putStrLn $ "Ignoring update: " ++ show u
 handleUpdate token (Update { uUserId, uEvent }) config =
@@ -38,7 +38,7 @@ handleUpdate token (Update { uUserId, uEvent }) config =
       liftIO $ sendOutMessage token uUserId outMessage
       liftIO $ answerCallbackQuery token cqId
 
-handleUpdates :: String -> [Update] -> Config -> StateT Int IO ()
+handleUpdates :: Token -> [Update] -> Config -> StateT Int IO ()
 handleUpdates token updates config =
   case updates of
     [] -> return ()
@@ -46,7 +46,7 @@ handleUpdates token updates config =
       handleUpdate token u config
       handleUpdates token us config
 
-runBot :: String -> UpdateId -> Config -> StateT Int IO ()
+runBot :: Token -> UpdateId -> Config -> StateT Int IO ()
 runBot token offset config = do
   liftIO $ putStrLn $ "Offset: " ++ show offset
   eitherUpdates <- liftIO $ getUpdates token offset

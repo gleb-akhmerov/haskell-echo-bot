@@ -8,8 +8,10 @@ import Data.Aeson ( object, (.=), toJSONList )
 import Telegram.BotTypes
 import Util ( requestJSON, verboseEitherDecode )
 
-getUpdates :: String -> UpdateId -> IO (Either String [Update])
-getUpdates token (UpdateId offset) = do
+data Token = Token String
+
+getUpdates :: Token -> UpdateId -> IO (Either String [Update])
+getUpdates (Token token) (UpdateId offset) = do
   response <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/getUpdates")
@@ -19,16 +21,16 @@ getUpdates token (UpdateId offset) = do
   let json = getResponseBody response
   return $ verboseEitherDecode json >>= parseResult
 
-sendMessage :: String -> UserId -> String -> IO ()
-sendMessage token (UserId userId) text = do
+sendMessage :: Token -> UserId -> String -> IO ()
+sendMessage (Token token) (UserId userId) text = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/sendMessage")
       (object ["chat_id" .= userId, "text" .= text])
   return ()
 
-forwardMessage :: String -> UserId -> MessageId -> IO ()
-forwardMessage token (UserId userId) (MessageId messageId) = do
+forwardMessage :: Token -> UserId -> MessageId -> IO ()
+forwardMessage (Token token) (UserId userId) (MessageId messageId) = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/forwardMessage")
@@ -38,8 +40,8 @@ forwardMessage token (UserId userId) (MessageId messageId) = do
               ])
   return ()
 
-sendKeyboard :: String -> UserId -> String -> [Int] -> IO ()
-sendKeyboard token (UserId userId) text buttons = do
+sendKeyboard :: Token -> UserId -> String -> [Int] -> IO ()
+sendKeyboard (Token token) (UserId userId) text buttons = do
   let stringButtons = map show buttons
   _ <- httpLBS $
     requestJSON
@@ -52,8 +54,8 @@ sendKeyboard token (UserId userId) text buttons = do
               ])
   return ()      
 
-answerCallbackQuery :: String -> CallbackQueryId -> IO ()
-answerCallbackQuery token (CallbackQueryId queryId) = do
+answerCallbackQuery :: Token -> CallbackQueryId -> IO ()
+answerCallbackQuery (Token token) (CallbackQueryId queryId) = do
   _ <- httpLBS $
     requestJSON
       ("https://api.telegram.org/bot" ++ token ++ "/answerCallbackQuery")
