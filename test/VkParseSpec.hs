@@ -3,16 +3,16 @@
 module VkParseSpec where
 
 import Test.Hspec
-import Data.Aeson ( decode )
-import VkTypes
+import Util ( verboseEitherDecode )
+import Vk.Types
 
 spec :: Spec
 spec = do
   describe "parser" $ do
     it "understands result" $ do
-      let res = decode "{\"ts\": \"4\", \"updates\": [{\"type\": \"message_new\", \"object\": {\"id\": 5, \"date\": 1597522977, \"out\": 0, \"user_id\": 1248374, \"read_state\": 0, \"title\": \"\", \"body\": \"42\", \"owner_ids\": []}, \"group_id\": 12345566, \"event_id\": \"h44827ab\"}]}" :: Maybe Result
+      let res = verboseEitherDecode "{\"ts\": \"4\", \"updates\": [{\"type\": \"message_new\", \"object\": {\"message\": {\"date\": 1590000000, \"from_id\": 12, \"id\": 5, \"out\": 0, \"peer_id\": 12, \"text\": \"42\", \"conversation_message_id\": 5, \"fwd_messages\": [], \"important\": false, \"random_id\": 0, \"attachments\": [], \"is_hidden\": false}, \"client_info\": {\"button_actions\": [\"text\", \"vkpay\", \"open_app\", \"location\", \"open_link\", \"callback\"], \"keyboard\": true, \"inline_keyboard\": true, \"carousel\": false, \"lang_id\": 3}}, \"group_id\": 123456789, \"event_id\": \"789abc\"}]}" :: Either String Result
       res `shouldBe`
-        Just
+        Right
         ( Result
           { rTs = "4"
           , rUpdates =
@@ -20,7 +20,9 @@ spec = do
               { uType = "message_new"
               , uObject = Message
                           { mId = 5
-                          , mBody = "42"
+                          , mText = "42"
+                          , mUserId = 12
+                          , mPayload = Nothing
                           }
               }
             ]

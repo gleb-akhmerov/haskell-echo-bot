@@ -4,7 +4,7 @@ module TelegramTypesSpec where
 
 import Test.Hspec
 import Data.Aeson ( decode )
-import TelegramTypes
+import Telegram.ApiTypes
 
 spec :: Spec
 spec = do
