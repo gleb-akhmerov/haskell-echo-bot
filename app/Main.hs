@@ -10,20 +10,20 @@ import qualified Vk.Core as Vk
 import qualified Vk.Api as Vk
 import Bot
 
-data AuthConfig
-   = AuthConfig
+data AppConfig
+   = AppConfig
        { telegramToken :: Tg.Token
        , vkToken :: Vk.Token
        , vkGroupId :: Integer
        }
   deriving Show
 
-configParser :: IniParser AuthConfig
+configParser :: IniParser AppConfig
 configParser = do
   telegramToken <- Tg.Token <$> (section "Telegram" $ fieldOf "token" string)
   vkToken <- Vk.Token <$> (section "VK" $ fieldOf "token" string)
   vkGroupId <- section "VK" $ fieldOf "groupId" number
-  return AuthConfig {..}
+  return AppConfig {..}
 
 main :: IO ()
 main = do
@@ -32,4 +32,9 @@ main = do
     Left err ->
       putStrLn err
     Right config ->
-      Vk.runBot defaultConfig 1 (vkToken config) (vkGroupId config)
+      let vkConfig = Vk.VkConfig
+                       { vcBotConfig = defaultConfig
+                       , vcToken = (vkToken config)
+                       , vcGroupId = (vkGroupId config)
+                       }
+      in Vk.runBot vkConfig 1

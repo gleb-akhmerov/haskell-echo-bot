@@ -3,17 +3,18 @@
 
 module Vk.Api where
 
-import Network.HTTP.Simple ( httpLBS, getResponseBody )
-import Util ( requestQuery, verboseEitherDecode )
-import Data.Aeson ( encode, object, (.=) )
+import Control.Monad.IO.Class ( MonadIO, liftIO )
 import qualified Data.ByteString.Lazy.Char8 as LBS
-import System.Random ( randomIO )
 import Data.Traversable ( for )
+import System.Random ( randomIO )
+import Network.HTTP.Simple ( httpLBS, getResponseBody )
+import Data.Aeson ( encode, object, (.=) )
+import Util ( requestQuery, verboseEitherDecode )
 import Vk.Types
 
 data Token = Token String deriving Show
 
-getLongPollServer :: Token -> Integer -> IO (Either String Response)
+getLongPollServer :: (MonadIO m) => Token -> Integer -> m (Either String Response)
 getLongPollServer (Token token) groupId = do
   response <- httpLBS $
     requestQuery
@@ -24,7 +25,7 @@ getLongPollServer (Token token) groupId = do
       ]
   return $ verboseEitherDecode $ getResponseBody response
 
-getUpdates :: String -> String -> String -> IO (Either String Result)
+getUpdates :: (MonadIO m) => String -> String -> String -> m (Either String Result)
 getUpdates server key ts = do
   response <- httpLBS $
     requestQuery
@@ -35,12 +36,12 @@ getUpdates server key ts = do
       , ("ts", ts)
       , ("wait", "25")
       ]
-  LBS.putStr $ getResponseBody response
+  liftIO $ LBS.putStr $ getResponseBody response
   return $ verboseEitherDecode $ getResponseBody response
 
-sendTextMessage :: Token -> Integer -> String -> IO ()
+sendTextMessage :: (MonadIO m) => Token -> Integer -> String -> m ()
 sendTextMessage (Token token) userId text = do
-  randomId <- randomIO :: IO Int
+  randomId <- liftIO (randomIO :: IO Int)
   _ <- httpLBS $
     requestQuery
       "https://api.vk.com/method/messages.send"
@@ -52,9 +53,9 @@ sendTextMessage (Token token) userId text = do
       ]
   return ()
 
-sendKeyboard :: Token -> Integer -> String -> [Int] -> IO ()
+sendKeyboard :: (MonadIO m) => Token -> Integer -> String -> [Int] -> m ()
 sendKeyboard (Token token) userId text buttons = do
-  randomId <- randomIO :: IO Int
+  randomId <- liftIO (randomIO :: IO Int)
   r <- httpLBS $
     requestQuery
       "https://api.vk.com/method/messages.send"
@@ -74,12 +75,12 @@ sendKeyboard (Token token) userId text buttons = do
                          , "label" .= show x
                          ]]])])
       ]
-  LBS.putStrLn $ getResponseBody r
+  liftIO $ LBS.putStrLn $ getResponseBody r
   return ()
 
-forwardMessage :: Token -> Integer -> Integer -> IO ()
+forwardMessage :: (MonadIO m) => Token -> Integer -> Integer -> m ()
 forwardMessage (Token token) userId messageId = do
-  randomId <- randomIO :: IO Int
+  randomId <- liftIO (randomIO :: IO Int)
   _ <- httpLBS $
     requestQuery
       "https://api.vk.com/method/messages.send"
