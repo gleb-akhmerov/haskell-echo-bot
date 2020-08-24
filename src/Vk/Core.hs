@@ -9,7 +9,7 @@ import Bot
 import Vk.Types
 import Vk.Api
 
-sendOutMessage :: String -> Integer -> OutMessage Integer -> IO ()
+sendOutMessage :: Token -> Integer -> OutMessage Integer -> IO ()
 sendOutMessage token userId outMessage = do
   case outMessage of
     SendText text ->
@@ -19,7 +19,7 @@ sendOutMessage token userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: Config -> Int -> String -> Update -> IO Int
+handleUpdate :: Config -> Int -> Token -> Update -> IO Int
 handleUpdate config repeats token (Update { uObject }) = do
   case uObject of
     Message { mId, mUserId, mText = "" } -> do
@@ -37,7 +37,7 @@ handleUpdate config repeats token (Update { uObject }) = do
     UnknownObject ->
       return repeats
 
-handleUpdates :: Config -> Int -> String -> [Update] -> IO Int
+handleUpdates :: Config -> Int -> Token -> [Update] -> IO Int
 handleUpdates config repeats token updates =
   case updates of
     [] ->
@@ -46,7 +46,7 @@ handleUpdates config repeats token updates =
       repeats' <- handleUpdate config repeats token u
       handleUpdates config repeats' token us
 
-runBot' :: Config -> Int -> String -> String -> String -> String -> IO ()
+runBot' :: Config -> Int -> Token -> String -> String -> String -> IO ()
 runBot' config repeats token server key ts = do
   eitherUpdates <- getUpdates server key ts
   case eitherUpdates of
@@ -57,7 +57,7 @@ runBot' config repeats token server key ts = do
       repeats' <- handleUpdates config repeats token rUpdates
       runBot' config repeats' token server key rTs
 
-runBot :: Config -> Int -> String -> Integer -> IO ()
+runBot :: Config -> Int -> Token -> Integer -> IO ()
 runBot config repeats token groupId = do
   eitherResponse <- getLongPollServer token groupId
   case eitherResponse of

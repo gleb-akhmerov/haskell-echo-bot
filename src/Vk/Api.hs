@@ -11,8 +11,10 @@ import System.Random ( randomIO )
 import Data.Traversable ( for )
 import Vk.Types
 
-getLongPollServer :: String -> Integer -> IO (Either String Response)
-getLongPollServer token groupId = do
+data Token = Token String deriving Show
+
+getLongPollServer :: Token -> Integer -> IO (Either String Response)
+getLongPollServer (Token token) groupId = do
   response <- httpLBS $
     requestQuery
       "https://api.vk.com/method/groups.getLongPollServer"
@@ -36,8 +38,8 @@ getUpdates server key ts = do
   LBS.putStr $ getResponseBody response
   return $ verboseEitherDecode $ getResponseBody response
 
-sendTextMessage :: String -> Integer -> String -> IO ()
-sendTextMessage token userId text = do
+sendTextMessage :: Token -> Integer -> String -> IO ()
+sendTextMessage (Token token) userId text = do
   randomId <- randomIO :: IO Int
   _ <- httpLBS $
     requestQuery
@@ -50,8 +52,8 @@ sendTextMessage token userId text = do
       ]
   return ()
 
-sendKeyboard :: String -> Integer -> String -> [Int] -> IO ()
-sendKeyboard token userId text buttons = do
+sendKeyboard :: Token -> Integer -> String -> [Int] -> IO ()
+sendKeyboard (Token token) userId text buttons = do
   randomId <- randomIO :: IO Int
   r <- httpLBS $
     requestQuery
@@ -75,8 +77,8 @@ sendKeyboard token userId text buttons = do
   LBS.putStrLn $ getResponseBody r
   return ()
 
-forwardMessage :: String -> Integer -> Integer -> IO ()
-forwardMessage token userId messageId = do
+forwardMessage :: Token -> Integer -> Integer -> IO ()
+forwardMessage (Token token) userId messageId = do
   randomId <- randomIO :: IO Int
   _ <- httpLBS $
     requestQuery

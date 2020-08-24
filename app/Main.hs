@@ -5,21 +5,23 @@ module Main where
 
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( IniParser, section, fieldOf, string, parseIniFile, number )
+import qualified Telegram.Api as Tg
 import qualified Vk.Core as Vk
+import qualified Vk.Api as Vk
 import Bot
 
 data AuthConfig
    = AuthConfig
-       { telegramToken :: String
-       , vkToken :: String
+       { telegramToken :: Tg.Token
+       , vkToken :: Vk.Token
        , vkGroupId :: Integer
        }
   deriving Show
 
 configParser :: IniParser AuthConfig
 configParser = do
-  telegramToken <- section "Telegram" $ fieldOf "token" string
-  vkToken <- section "VK" $ fieldOf "token" string
+  telegramToken <- Tg.Token <$> (section "Telegram" $ fieldOf "token" string)
+  vkToken <- Vk.Token <$> (section "VK" $ fieldOf "token" string)
   vkGroupId <- section "VK" $ fieldOf "groupId" number
   return AuthConfig {..}
 

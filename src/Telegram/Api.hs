@@ -9,7 +9,7 @@ import Telegram.BotTypes
 import Util ( requestJSON, verboseEitherDecode )
 import Control.Monad.IO.Class ( MonadIO )
 
-data Token = Token String
+data Token = Token String deriving Show
 
 getUpdates :: MonadIO m => Token -> UpdateId -> m (Either String [Update])
 getUpdates (Token token) (UpdateId offset) = do
