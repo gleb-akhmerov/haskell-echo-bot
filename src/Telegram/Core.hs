@@ -5,10 +5,11 @@
 module Telegram.Core where
 
 import Data.Function ( (&) )
+import Data.Functor ( (<&>) )
 import Control.Monad ( replicateM_ )
-import Control.Monad.State ( MonadState )
+import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.IO.Class ( MonadIO, liftIO )
-import Control.Monad.Reader ( MonadReader, ask )
+import Control.Monad.Reader ( MonadReader, ask, runReaderT )
 import Bot ( react, Config, InMessage(..), OutMessage(..) )
 import Telegram.BotTypes
 import Telegram.Api
@@ -21,7 +22,7 @@ data TelegramConfig
 
 sendOutMessage :: (MonadReader TelegramConfig m, MonadIO m) => UserId -> OutMessage MessageId -> m ()
 sendOutMessage userId outMessage = do
-  token <- tcToken <$> ask
+  token <- ask <&> tcToken
   case outMessage of
     SendText text ->
       sendMessage token userId text
@@ -36,7 +37,7 @@ handleUpdate update =
     UnknownUpdate {} ->
       liftIO $ putStrLn $ "Ignoring update: " ++ show update
     Update { uUserId, uEvent } -> do
-      config <- tcBotConfig <$> ask
+      config <- ask <&> tcBotConfig
       case uEvent of
         EventMessage (MessageWithId mesId message) -> do
           outMessage <- case message of
@@ -48,7 +49,7 @@ handleUpdate update =
         CallbackQuery { cqId, cqData } -> do
           outMessage <- react config (KeyboardKeyPushed cqData)
           sendOutMessage uUserId outMessage
-          token <- tcToken <$> ask
+          token <- ask <&> tcToken
           answerCallbackQuery token cqId
 
 handleUpdates :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => [Update] -> m ()
@@ -57,15 +58,19 @@ handleUpdates (u:us) = do
   handleUpdate  u
   handleUpdates us
 
-runBot :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => UpdateId -> m ()
-runBot offset = do
-  token <- tcToken <$> ask
+botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => UpdateId -> m ()
+botLoop offset = do
+  token <- ask <&> tcToken
   liftIO $ putStrLn $ "Offset: " ++ show offset
   eitherUpdates <- getUpdates token offset
   case eitherUpdates of
     Left err      -> liftIO $ putStrLn err
-    Right []      -> runBot offset
+    Right []      -> botLoop offset
     Right updates -> do
       handleUpdates updates
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
-      runBot newOffset
+      botLoop newOffset
+
+runBot :: TelegramConfig -> Int -> UpdateId -> IO ()
+runBot config repeats offset =
+  evalStateT (runReaderT (botLoop offset) config) repeats
