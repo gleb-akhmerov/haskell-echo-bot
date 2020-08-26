@@ -21,7 +21,7 @@ data VkConfig
        , vcBotConfig :: Config
        }
 
-sendOutMessage :: (MonadIO m, MonadReader VkConfig m) => Integer -> OutMessage Integer -> m ()
+sendOutMessage :: (MonadIO m, MonadReader VkConfig m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
 sendOutMessage userId outMessage = do
   token <- asks vcToken
   case outMessage of
@@ -32,7 +32,7 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => Update -> m ()
+handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadState Int m, MonadLogger m) => Update -> m ()
 handleUpdate (Update { uObject }) = do
   config <- asks vcBotConfig
   case uObject of

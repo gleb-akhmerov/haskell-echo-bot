@@ -10,6 +10,7 @@ import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.IO.Class ( MonadIO, liftIO )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Bot ( react, Config, InMessage(..), OutMessage(..) )
+import Logger
 import Telegram.BotTypes
 import Telegram.Api
 
@@ -19,7 +20,7 @@ data TelegramConfig
        , tcBotConfig :: Config
        }
 
-sendOutMessage :: (MonadReader TelegramConfig m, MonadIO m) => UserId -> OutMessage MessageId -> m ()
+sendOutMessage :: (MonadReader TelegramConfig m, MonadIO m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
 sendOutMessage userId outMessage = do
   token <- asks tcToken
   case outMessage of
@@ -30,7 +31,7 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => Update -> m ()
+handleUpdate :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, MonadLogger m) => Update -> m ()
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
@@ -51,7 +52,7 @@ handleUpdate update =
           token <- asks tcToken
           answerCallbackQuery token cqId
 
-botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => UpdateId -> m ()
+botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
   token <- asks tcToken
   liftIO $ putStrLn $ "Offset: " ++ show offset
@@ -64,6 +65,6 @@ botLoop offset = do
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
       botLoop newOffset
 
-runBot :: TelegramConfig -> Int -> UpdateId -> IO ()
-runBot config repeats offset =
-  evalStateT (runReaderT (botLoop offset) config) repeats
+runBot :: Level -> TelegramConfig -> Int -> UpdateId -> IO ()
+runBot logLevel config repeats offset =
+  runLogger logLevel $ evalStateT (runReaderT (botLoop offset) config) repeats

@@ -3,7 +3,9 @@
 
 module Bot where
 
+import Prelude hiding ( log )
 import Control.Monad.State ( get, put, MonadState )
+import Logger
 
 data Config = Config { helpText :: String
                      , repeatKeyboardText :: String
@@ -28,8 +30,9 @@ data OutMessage a
   | SendKeyboard String [Int]
   deriving (Show, Eq)
 
-react :: MonadState Int m => Config -> InMessage a -> m (OutMessage a)
-react config inMessage =
+react :: (MonadState Int m, Show a, MonadLogger m) => Config -> InMessage a -> m (OutMessage a)
+react config inMessage = do
+  log Debug (show inMessage)
   case inMessage of
     InMediaMessage message -> do
       repeats <- get

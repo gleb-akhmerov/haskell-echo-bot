@@ -4,6 +4,7 @@
 module Logger where
 
 import Prelude hiding ( log )
+import Data.Functor.Identity ( Identity, runIdentity )
 import Control.Monad.Reader ( ReaderT )
 import Control.Monad.Writer ( WriterT, Writer, tell )
 import Control.Monad.State ( StateT )
@@ -81,5 +82,11 @@ instance MonadLogger (LevelReader IO) where
 instance MonadLogger (LevelReader (Writer [String])) where
   doLog mes = lift $ tell [mes]
 
+instance MonadLogger (LevelReader Identity) where
+  doLog _ = return ()
+
 runLogger :: Monad m => Level -> LevelReader m a -> m a
 runLogger minLevel f = runLevelReader f minLevel
+
+runLoggerIgnore :: LevelReader Identity a -> a
+runLoggerIgnore f = runIdentity $ runLogger Debug f
