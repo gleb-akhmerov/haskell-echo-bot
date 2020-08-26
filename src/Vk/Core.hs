@@ -4,9 +4,8 @@
 
 module Vk.Core where
 
-import Data.Functor ( (<&>) )
 import Control.Monad.State ( MonadState, evalStateT )
-import Control.Monad.Reader ( MonadReader, ask, runReaderT )
+import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad.IO.Class ( MonadIO, liftIO )
 import Control.Monad ( replicateM_ )
 import Bot
@@ -22,7 +21,7 @@ data VkConfig
 
 sendOutMessage :: (MonadIO m, MonadReader VkConfig m) => Integer -> OutMessage Integer -> m ()
 sendOutMessage userId outMessage = do
-  token <- ask <&> vcToken
+  token <- asks vcToken
   case outMessage of
     SendText text ->
       sendTextMessage token userId text
@@ -33,7 +32,7 @@ sendOutMessage userId outMessage = do
 
 handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => Update -> m ()
 handleUpdate (Update { uObject }) = do
-  config <- ask <&> vcBotConfig
+  config <- asks vcBotConfig
   case uObject of
     Message { mId, mUserId, mText = "" } -> do
       outMessage <- react config (InMediaMessage mId)
@@ -60,8 +59,8 @@ botLoop server key ts = do
 
 startPolling :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => m ()
 startPolling = do
-  groupId <- ask <&> vcGroupId
-  token <- ask <&> vcToken
+  groupId <- asks vcGroupId
+  token <- asks vcToken
   eitherResponse <- getLongPollServer token groupId
   case eitherResponse of
     Left err ->
