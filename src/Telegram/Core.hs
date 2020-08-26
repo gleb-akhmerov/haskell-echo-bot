@@ -52,12 +52,6 @@ handleUpdate update =
           token <- ask <&> tcToken
           answerCallbackQuery token cqId
 
-handleUpdates :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => [Update] -> m ()
-handleUpdates [] = return ()
-handleUpdates (u:us) = do
-  handleUpdate  u
-  handleUpdates us
-
 botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m) => UpdateId -> m ()
 botLoop offset = do
   token <- ask <&> tcToken
@@ -67,7 +61,7 @@ botLoop offset = do
     Left err      -> liftIO $ putStrLn err
     Right []      -> botLoop offset
     Right updates -> do
-      handleUpdates updates
+      mapM_ handleUpdate updates
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
       botLoop newOffset
 

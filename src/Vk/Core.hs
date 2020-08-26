@@ -47,12 +47,6 @@ handleUpdate (Update { uObject }) = do
     UnknownObject ->
       return ()
 
-handleUpdates :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => [Update] -> m ()
-handleUpdates [] = return ()
-handleUpdates (u:us) = do
-  handleUpdate  u
-  handleUpdates us
-
 botLoop :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => String -> String -> String -> m ()
 botLoop server key ts = do
   eitherUpdates <- getUpdates server key ts
@@ -61,7 +55,7 @@ botLoop server key ts = do
       liftIO $ putStrLn err
     Right (Result { rTs, rUpdates }) -> do
       liftIO $ print rUpdates
-      handleUpdates rUpdates
+      mapM_ handleUpdate rUpdates
       botLoop server key rTs
 
 startPolling :: (MonadIO m, MonadReader VkConfig m, MonadState Int m) => m ()
