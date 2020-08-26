@@ -9,6 +9,7 @@ import qualified Telegram.Api as Tg
 import qualified Vk.Core as Vk
 import qualified Vk.Api as Vk
 import Bot
+import Logger
 
 data AppConfig
    = AppConfig
@@ -37,4 +38,4 @@ main = do
                        , vcToken = (vkToken config)
                        , vcGroupId = (vkGroupId config)
                        }
-      in Vk.runBot vkConfig 1
+      in Vk.runBot Debug vkConfig 1
