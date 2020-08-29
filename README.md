@@ -16,7 +16,7 @@ You also need to register new bots in [Telegram](https://core.telegram.org/bots/
 Then, do the following:
 - clone the repository: `git clone https://github.com/gleb-akhmerov/haskell-echo-bot.git`
 - build: `stack build`
-- edit the config (TODO: describe how to create the config and how to specify tokens, repeats, etc.)
+- create config.ini (see config.ini.example)
 - run the bot: `stack run`
 
 
