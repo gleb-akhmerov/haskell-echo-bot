@@ -4,6 +4,7 @@
 
 module Vk.Core where
 
+import Data.Function ( (&) )
 import Prelude hiding ( log )
 import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
@@ -20,6 +21,7 @@ data VkConfig
        , vcGroupId :: Integer
        , vcBotConfig :: Config
        }
+  deriving (Show)
 
 sendOutMessage :: (MonadIO m, MonadReader VkConfig m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
 sendOutMessage userId outMessage = do
@@ -71,6 +73,7 @@ startPolling = do
       botLoop lpsServer lpsKey lpsTs
   return ()
 
-runBot :: Level -> VkConfig -> Int -> IO ()
-runBot logLevel config repeats =
-  runLogger logLevel $ evalStateT (runReaderT startPolling config) repeats
+runBot :: Level -> VkConfig -> IO ()
+runBot logLevel config =
+  let repeats = config & vcBotConfig & initialRepeats
+  in runLogger logLevel $ evalStateT (runReaderT startPolling config) repeats

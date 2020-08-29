@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 573286de8ab6312056531576a282ae0070e1ca32ec179eb7dcfc66e9d083c455
+-- hash: 23b05f04c345a0ad528438ced79c5d375f3700ebc051fa55765db9c4f4267321
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Bot
+      Config
       Logger
       Telegram.Api
       Telegram.ApiTypes

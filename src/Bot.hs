@@ -7,16 +7,13 @@ import Prelude hiding ( log )
 import Control.Monad.State ( get, put, MonadState )
 import Logger
 
-data Config = Config { helpText :: String
-                     , repeatKeyboardText :: String
-                     } deriving (Show, Eq)
-
-defaultConfig :: Config
-defaultConfig =
-  Config
-    { helpText = "This bot repeats the messages that you send it."
-    , repeatKeyboardText = "How many times would you like me to repeat your messages?"
-    }
+data Config
+   = Config
+       { helpText :: String
+       , repeatKeyboardText :: String
+       , initialRepeats :: Int
+       }
+  deriving (Show, Eq)
 
 data InMessage a
   = InTextMessage String a
