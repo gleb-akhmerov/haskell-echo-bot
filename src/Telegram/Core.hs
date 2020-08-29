@@ -4,10 +4,11 @@
 
 module Telegram.Core where
 
+import Prelude hiding ( log )
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
 import Control.Monad.State ( MonadState, evalStateT )
-import Control.Monad.IO.Class ( MonadIO, liftIO )
+import Control.Monad.IO.Class ( MonadIO )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Bot ( react, Config, InMessage(..), OutMessage(..) )
 import Logger
@@ -35,7 +36,7 @@ handleUpdate :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, Mona
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
-      liftIO $ putStrLn $ "Ignoring update: " ++ show update
+      log Info $ "Ignoring update: " ++ show update
     Update { uUserId, uEvent } -> do
       config <- asks tcBotConfig
       case uEvent of
@@ -55,10 +56,10 @@ handleUpdate update =
 botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
   token <- asks tcToken
-  liftIO $ putStrLn $ "Offset: " ++ show offset
+  log Info $ "Offset: " ++ show offset
   eitherUpdates <- getUpdates token offset
   case eitherUpdates of
-    Left err      -> liftIO $ putStrLn err
+    Left err      -> log Error err
     Right []      -> botLoop offset
     Right updates -> do
       mapM_ handleUpdate updates
