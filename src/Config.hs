@@ -30,7 +30,7 @@ configParser = do
     return TelegramConfig {..}
   acVk <- section "Vk" $ do
     vcToken <- Vk.Token <$> fieldOf "token" string
-    vcGroupId <- fieldOf "groupId" number
+    vcGroupId <- fieldOf "group_id" number
     let vcBotConfig = botConfig
     return VkConfig {..}
   return AppConfig {..}
