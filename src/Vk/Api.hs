@@ -3,6 +3,7 @@
 
 module Vk.Api where
 
+import Prelude hiding ( log )
 import Control.Monad.IO.Class ( MonadIO, liftIO )
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Traversable ( for )
@@ -11,6 +12,7 @@ import Network.HTTP.Simple ( httpLBS, getResponseBody )
 import Data.Aeson ( encode, object, (.=) )
 import Util ( requestQuery, verboseEitherDecode )
 import Vk.Types
+import Logger
 
 data Token = Token String deriving Show
 
@@ -25,7 +27,7 @@ getLongPollServer (Token token) groupId = do
       ]
   return $ verboseEitherDecode $ getResponseBody response
 
-getUpdates :: (MonadIO m) => String -> String -> String -> m (Either String Result)
+getUpdates :: (MonadIO m, MonadLogger m) => String -> String -> String -> m (Either String Result)
 getUpdates server key ts = do
   response <- httpLBS $
     requestQuery
@@ -36,7 +38,7 @@ getUpdates server key ts = do
       , ("ts", ts)
       , ("wait", "25")
       ]
-  liftIO $ LBS.putStr $ getResponseBody response
+  log Debug $ LBS.unpack $ getResponseBody response
   return $ verboseEitherDecode $ getResponseBody response
 
 sendTextMessage :: (MonadIO m) => Token -> Integer -> String -> m ()
@@ -56,7 +58,7 @@ sendTextMessage (Token token) userId text = do
 sendKeyboard :: (MonadIO m) => Token -> Integer -> String -> [Int] -> m ()
 sendKeyboard (Token token) userId text buttons = do
   randomId <- liftIO (randomIO :: IO Int)
-  r <- httpLBS $
+  _ <- httpLBS $
     requestQuery
       "https://api.vk.com/method/messages.send"
       [ ("access_token", token)
@@ -75,7 +77,6 @@ sendKeyboard (Token token) userId text buttons = do
                          , "label" .= show x
                          ]]])])
       ]
-  liftIO $ LBS.putStrLn $ getResponseBody r
   return ()
 
 forwardMessage :: (MonadIO m) => Token -> Integer -> Integer -> m ()
