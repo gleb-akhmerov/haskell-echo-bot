@@ -3,17 +3,23 @@
 
 module Config where
 
-import Data.Ini.Config ( IniParser, section, fieldOf, string, number )
+import Data.Ini.Config
 import qualified Telegram.Api as Tg ( Token(..) )
 import qualified Vk.Api as Vk ( Token(..) )
 import Vk.Core ( VkConfig(..) )
 import Telegram.Core ( TelegramConfig(..) )
 import qualified Bot ( Config(..) )
 
+data Api
+  = Telegram
+  | VK
+  deriving (Read, Show)
+
 data AppConfig
    = AppConfig
        { acTelegram :: TelegramConfig
        , acVk :: VkConfig
+       , acApi :: Api
        }
   deriving Show
 
@@ -33,4 +39,5 @@ configParser = do
     vcGroupId <- fieldOf "group_id" number
     let vcBotConfig = botConfig
     return VkConfig {..}
+  acApi <- section "Run" $ fieldOf "api" readable
   return AppConfig {..}

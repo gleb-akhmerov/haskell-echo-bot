@@ -5,6 +5,8 @@ module Main where
 
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( parseIniFile )
+import qualified Telegram.Core as Tg
+import qualified Telegram.BotTypes as Tg
 import qualified Vk.Core as Vk
 import Logger ( Level(..) )
 import Config
@@ -16,4 +18,8 @@ main = do
     Left err ->
       putStrLn err
     Right config ->
-      Vk.runBot Debug (acVk config)
+      case (acApi config) of
+        Telegram ->
+          Tg.runBot Debug (acTelegram config) (Tg.UpdateId 0)
+        VK ->
+          Vk.runBot Debug (acVk config)

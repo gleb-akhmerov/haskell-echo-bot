@@ -9,3 +9,6 @@ token = CHANGEME
 [VK]
 token = CHANGEME
 group_id = CHANGEME
+
+[Run]
+api = Telegram
