@@ -6,7 +6,7 @@ module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Control.Monad.Reader ( MonadReader, asks, runReaderT )
+import Control.Monad.Reader ( MonadReader, ask, runReaderT )
 import Bot
 import Logger
 import Telegram.BotTypes
@@ -19,9 +19,9 @@ data TelegramConfig
        }
   deriving (Show)
 
-sendOutMessage :: (MonadReader TelegramConfig m, MonadTelegram m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
+sendOutMessage :: (MonadReader Token m, MonadTelegram m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
 sendOutMessage userId outMessage = do
-  token <- asks tcToken
+  token <- ask
   case outMessage of
     SendText text ->
       sendMessage token userId text
@@ -30,30 +30,29 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadReader TelegramConfig m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
+handleUpdate :: (MonadReader Token m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
       logLn Info $ "Ignoring update: " ++ show update
-    Update { uUserId, uEvent } -> do
-      config <- asks tcBotConfig
+    Update { uUserId, uEvent } ->
       case uEvent of
         EventMessage (MessageWithId mesId message) -> do
           outMessage <- case message of
             TextMessage { tmText } ->
-              react config (InTextMessage tmText mesId)
+              react (InTextMessage tmText mesId)
             MediaMessage ->
-              react config (InMediaMessage mesId)
+              react (InMediaMessage mesId)
           sendOutMessage uUserId outMessage
         CallbackQuery { cqId, cqData } -> do
-          outMessage <- react config (KeyboardKeyPushed cqData)
+          outMessage <- react (KeyboardKeyPushed cqData)
           sendOutMessage uUserId outMessage
-          token <- asks tcToken
+          token <- ask
           answerCallbackQuery token cqId
 
-botLoop :: (MonadReader TelegramConfig m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => UpdateId -> m ()
+botLoop :: (MonadReader Token m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
-  token <- asks tcToken
+  token <- ask
   logLn Info $ "Offset: " ++ show offset
   eitherUpdates <- getUpdates token offset
   case eitherUpdates of
@@ -65,6 +64,5 @@ botLoop offset = do
       botLoop newOffset
 
 runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
-runBot logLevel config offset =
-  let repeats = config & tcBotConfig & initialRepeats
-  in runConsoleLoggerT (evalBotT (runReaderT (botLoop offset) config) repeats) logLevel
+runBot logLevel (TelegramConfig { tcToken, tcBotConfig }) offset =
+  runConsoleLoggerT (evalBotT (runReaderT (botLoop offset) tcToken) tcBotConfig) logLevel

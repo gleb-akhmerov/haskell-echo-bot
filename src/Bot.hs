@@ -8,6 +8,7 @@
 module Bot where
 
 import Control.Monad.State
+import Control.Monad.Reader
 import Logger
 
 data Config
@@ -31,21 +32,25 @@ data OutMessage a
   deriving (Show, Eq)
 
 class Monad m => MonadBot i m where
-  react :: Config -> InMessage i -> m (OutMessage i)
+  react :: InMessage i -> m (OutMessage i)
 
 instance {-# OVERLAPPABLE #-}
   ( Monad (t m)
   , MonadTrans t
   , MonadBot i m
   ) => MonadBot i (t m) where
-  react config inMessage = lift (react config inMessage)
+  react inMessage = lift (react inMessage)
 
 newtype BotT m a
-  = BotT { unBotT :: StateT Int m a }
-  deriving (Functor, Applicative, Monad, MonadTrans, MonadIO)
+  = BotT { unBotT :: ReaderT Config (StateT Int m) a }
+  deriving (Functor, Applicative, Monad, MonadIO)
+
+instance MonadTrans BotT where
+  lift = BotT . lift . lift
 
 instance (MonadLogger m, Show i) => MonadBot i (BotT m) where
-  react config inMessage = BotT $ do
+  react inMessage = BotT $ do
+    config <- ask
     logLn Debug (show inMessage)
     case inMessage of
       InMediaMessage message -> do
@@ -64,8 +69,8 @@ instance (MonadLogger m, Show i) => MonadBot i (BotT m) where
         put n
         return $ SendText $ "The messages will now be repeated " ++ show n ++ " times."
 
-runBotT :: Monad m => BotT m a -> Int -> m (a, Int)
-runBotT (BotT m) initialRepeats = runStateT m initialRepeats
+runBotT :: Monad m => BotT m a -> Config -> m (a, Int)
+runBotT (BotT m) config = runStateT (runReaderT m config) (initialRepeats config)
 
-evalBotT :: Monad m => BotT m a -> Int -> m a
-evalBotT (BotT m) initialRepeats = evalStateT m initialRepeats
+evalBotT :: Monad m => BotT m a -> Config -> m a
+evalBotT (BotT m) config = evalStateT (runReaderT m config) (initialRepeats config)

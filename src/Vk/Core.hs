@@ -4,7 +4,6 @@
 
 module Vk.Core where
 
-import Data.Function ( (&) )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad.IO.Class ( MonadIO )
 import Control.Monad ( replicateM_ )
@@ -34,16 +33,15 @@ sendOutMessage userId outMessage = do
 
 handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => Update -> m ()
 handleUpdate (Update { uObject }) = do
-  config <- asks vcBotConfig
   case uObject of
     Message { mId, mUserId, mText = "" } -> do
-      outMessage <- react config (InMediaMessage mId)
+      outMessage <- react (InMediaMessage mId)
       sendOutMessage mUserId outMessage
     Message { mUserId, mPayload = Just payload } -> do
-      outMessage <- react config (KeyboardKeyPushed payload)
+      outMessage <- react (KeyboardKeyPushed payload)
       sendOutMessage mUserId outMessage
     Message { mId, mUserId, mText } -> do
-      outMessage <- react config (InTextMessage mText mId)
+      outMessage <- react (InTextMessage mText mId)
       sendOutMessage mUserId outMessage
     UnknownObject ->
       return ()
@@ -73,5 +71,5 @@ startPolling = do
 
 runBot :: Level -> VkConfig -> IO ()
 runBot logLevel config =
-  let repeats = config & vcBotConfig & initialRepeats
-  in runConsoleLoggerT (evalBotT (runReaderT startPolling config) repeats) logLevel
+  let botConfig = vcBotConfig config
+  in runConsoleLoggerT (evalBotT (runReaderT startPolling config) botConfig) logLevel
