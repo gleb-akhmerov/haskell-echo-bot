@@ -6,9 +6,8 @@ module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
-import Bot ( react, Config, InMessage(..), OutMessage(..), initialRepeats )
+import Bot
 import Logger
 import Telegram.BotTypes
 import Telegram.Api
@@ -31,7 +30,7 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadReader TelegramConfig m, MonadTelegram m, MonadState Int m, MonadLogger m) => Update -> m ()
+handleUpdate :: (MonadReader TelegramConfig m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
@@ -52,7 +51,7 @@ handleUpdate update =
           token <- asks tcToken
           answerCallbackQuery token cqId
 
-botLoop :: (MonadReader TelegramConfig m, MonadTelegram m, MonadState Int m, MonadLogger m) => UpdateId -> m ()
+botLoop :: (MonadReader TelegramConfig m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
   token <- asks tcToken
   logLn Info $ "Offset: " ++ show offset
@@ -68,4 +67,4 @@ botLoop offset = do
 runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
 runBot logLevel config offset =
   let repeats = config & tcBotConfig & initialRepeats
-  in runConsoleLoggerT (evalStateT (runReaderT (botLoop offset) config) repeats) logLevel
+  in runConsoleLoggerT (evalBotT (runReaderT (botLoop offset) config) repeats) logLevel

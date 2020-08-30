@@ -5,7 +5,6 @@
 module Vk.Core where
 
 import Data.Function ( (&) )
-import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad.IO.Class ( MonadIO )
 import Control.Monad ( replicateM_ )
@@ -33,7 +32,7 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadState Int m, MonadLogger m) => Update -> m ()
+handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => Update -> m ()
 handleUpdate (Update { uObject }) = do
   config <- asks vcBotConfig
   case uObject of
@@ -49,7 +48,7 @@ handleUpdate (Update { uObject }) = do
     UnknownObject ->
       return ()
 
-botLoop :: (MonadIO m, MonadReader VkConfig m, MonadState Int m, MonadLogger m) => String -> String -> String -> m ()
+botLoop :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => String -> String -> String -> m ()
 botLoop server key ts = do
   eitherUpdates <- getUpdates server key ts
   case eitherUpdates of
@@ -60,7 +59,7 @@ botLoop server key ts = do
       mapM_ handleUpdate rUpdates
       botLoop server key rTs
 
-startPolling :: (MonadIO m, MonadReader VkConfig m, MonadState Int m, MonadLogger m) => m ()
+startPolling :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => m ()
 startPolling = do
   groupId <- asks vcGroupId
   token <- asks vcToken
@@ -75,4 +74,4 @@ startPolling = do
 runBot :: Level -> VkConfig -> IO ()
 runBot logLevel config =
   let repeats = config & vcBotConfig & initialRepeats
-  in runConsoleLoggerT (evalStateT (runReaderT startPolling config) repeats) logLevel
+  in runConsoleLoggerT (evalBotT (runReaderT startPolling config) repeats) logLevel
