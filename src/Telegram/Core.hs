@@ -4,7 +4,6 @@
 
 module Telegram.Core where
 
-import Prelude hiding ( log )
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
 import Control.Monad.State ( MonadState, evalStateT )
@@ -37,7 +36,7 @@ handleUpdate :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, Mona
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
-      log Info $ "Ignoring update: " ++ show update
+      logLn Info $ "Ignoring update: " ++ show update
     Update { uUserId, uEvent } -> do
       config <- asks tcBotConfig
       case uEvent of
@@ -57,10 +56,10 @@ handleUpdate update =
 botLoop :: (MonadReader TelegramConfig m, MonadIO m, MonadState Int m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
   token <- asks tcToken
-  log Info $ "Offset: " ++ show offset
+  logLn Info $ "Offset: " ++ show offset
   eitherUpdates <- getUpdates token offset
   case eitherUpdates of
-    Left err      -> log Error err
+    Left err      -> logLn Error err
     Right []      -> botLoop offset
     Right updates -> do
       mapM_ handleUpdate updates
@@ -70,4 +69,4 @@ botLoop offset = do
 runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
 runBot logLevel config offset =
   let repeats = config & tcBotConfig & initialRepeats
-  in runLogger logLevel $ evalStateT (runReaderT (botLoop offset) config) repeats
+  in runConsoleLoggerT (evalStateT (runReaderT (botLoop offset) config) repeats) logLevel

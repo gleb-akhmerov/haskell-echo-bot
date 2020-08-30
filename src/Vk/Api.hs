@@ -3,7 +3,6 @@
 
 module Vk.Api where
 
-import Prelude hiding ( log )
 import Control.Monad.IO.Class ( MonadIO, liftIO )
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Traversable ( for )
@@ -38,7 +37,7 @@ getUpdates server key ts = do
       , ("ts", ts)
       , ("wait", "25")
       ]
-  log Debug $ LBS.unpack $ getResponseBody response
+  logLn Debug $ LBS.unpack $ getResponseBody response
   return $ verboseEitherDecode $ getResponseBody response
 
 sendTextMessage :: (MonadIO m) => Token -> Integer -> String -> m ()

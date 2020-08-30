@@ -5,7 +5,6 @@
 module Vk.Core where
 
 import Data.Function ( (&) )
-import Prelude hiding ( log )
 import Control.Monad.State ( MonadState, evalStateT )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad.IO.Class ( MonadIO )
@@ -55,9 +54,9 @@ botLoop server key ts = do
   eitherUpdates <- getUpdates server key ts
   case eitherUpdates of
     Left err ->
-      log Error err
+      logLn Error err
     Right (Result { rTs, rUpdates }) -> do
-      log Debug $ show rUpdates
+      logLn Debug $ show rUpdates
       mapM_ handleUpdate rUpdates
       botLoop server key rTs
 
@@ -68,7 +67,7 @@ startPolling = do
   eitherResponse <- getLongPollServer token groupId
   case eitherResponse of
     Left err ->
-      log Error err
+      logLn Error err
     Right (Response (LongPollServer { lpsKey, lpsServer, lpsTs })) -> do
       botLoop lpsServer lpsKey lpsTs
   return ()
@@ -76,4 +75,4 @@ startPolling = do
 runBot :: Level -> VkConfig -> IO ()
 runBot logLevel config =
   let repeats = config & vcBotConfig & initialRepeats
-  in runLogger logLevel $ evalStateT (runReaderT startPolling config) repeats
+  in runConsoleLoggerT (evalStateT (runReaderT startPolling config) repeats) logLevel

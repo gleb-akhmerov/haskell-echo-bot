@@ -3,7 +3,6 @@
 
 module Bot where
 
-import Prelude hiding ( log )
 import Control.Monad.State ( get, put, MonadState )
 import Logger
 
@@ -29,7 +28,7 @@ data OutMessage a
 
 react :: (MonadState Int m, Show a, MonadLogger m) => Config -> InMessage a -> m (OutMessage a)
 react config inMessage = do
-  log Debug (show inMessage)
+  logLn Debug (show inMessage)
   case inMessage of
     InMediaMessage message -> do
       repeats <- get
