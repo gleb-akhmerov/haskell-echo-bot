@@ -29,7 +29,8 @@ sendOutMessage userId outMessage = do
       sendKeyboard userId text buttons
 
 handleUpdate :: (MonadApi m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
-handleUpdate update =
+handleUpdate update = do
+  logLn Info (show update)
   case update of
     UnknownUpdate {} ->
       logLn Info $ "Ignoring update: " ++ show update
