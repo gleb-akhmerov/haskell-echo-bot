@@ -7,7 +7,6 @@
 
 module Telegram.Api where
 
-import Control.Monad.Trans.Class ( MonadTrans, lift )
 import Control.Monad.State
 import Control.Monad.Reader
 import Network.HTTP.Simple ( httpLBS, getResponseBody )
@@ -94,15 +93,3 @@ instance MonadApi Api where
 
 runApi :: Api a -> Token -> IO a
 runApi (Api m) (Token token) = runReaderT m token
-
-
-newtype Mock a
-  = Mock { tmState :: State () a }
-  deriving newtype (Functor, Applicative, Monad)
-
-instance MonadApi Mock where
-  getUpdates updateId = return $ Right []
-  sendMessage userId text = return ()
-  forwardMessage userId messageId = return ()
-  sendKeyboard userId text buttons = return ()
-  answerCallbackQuery queryId = return ()
