@@ -6,7 +6,6 @@ module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Control.Monad.Reader ( MonadReader, ask, runReaderT )
 import Bot
 import Logger
 import Telegram.BotTypes
@@ -19,18 +18,17 @@ data TelegramConfig
        }
   deriving (Show)
 
-sendOutMessage :: (MonadReader Token m, MonadTelegram m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
+sendOutMessage :: (MonadApi m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
 sendOutMessage userId outMessage = do
-  token <- ask
   case outMessage of
     SendText text ->
-      sendMessage token userId text
+      sendMessage userId text
     EchoTimes n messageId ->
-      replicateM_ n (forwardMessage token userId messageId)
+      replicateM_ n (forwardMessage userId messageId)
     SendKeyboard text buttons ->
-      sendKeyboard token userId text buttons
+      sendKeyboard userId text buttons
 
-handleUpdate :: (MonadReader Token m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
+handleUpdate :: (MonadApi m, MonadBot MessageId m, MonadLogger m) => Update -> m ()
 handleUpdate update =
   case update of
     UnknownUpdate {} ->
@@ -47,14 +45,12 @@ handleUpdate update =
         CallbackQuery { cqId, cqData } -> do
           outMessage <- react (KeyboardKeyPushed cqData)
           sendOutMessage uUserId outMessage
-          token <- ask
-          answerCallbackQuery token cqId
+          answerCallbackQuery cqId
 
-botLoop :: (MonadReader Token m, MonadTelegram m, MonadBot MessageId m, MonadLogger m) => UpdateId -> m ()
+botLoop :: (MonadApi m, MonadBot MessageId m, MonadLogger m) => UpdateId -> m ()
 botLoop offset = do
-  token <- ask
   logLn Info $ "Offset: " ++ show offset
-  eitherUpdates <- getUpdates token offset
+  eitherUpdates <- getUpdates offset
   case eitherUpdates of
     Left err      -> logLn Error err
     Right []      -> botLoop offset
@@ -65,4 +61,4 @@ botLoop offset = do
 
 runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
 runBot logLevel (TelegramConfig { tcToken, tcBotConfig }) offset =
-  runConsoleLoggerT (evalBotT (runReaderT (botLoop offset) tcToken) tcBotConfig) logLevel
+  runApi (runConsoleLoggerT (evalBotT (botLoop offset) tcBotConfig) logLevel) tcToken
