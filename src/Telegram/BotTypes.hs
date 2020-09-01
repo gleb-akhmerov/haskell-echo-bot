@@ -5,10 +5,10 @@ module Telegram.BotTypes where
 import Data.Function ( (&) )
 import qualified Telegram.ApiTypes as T
 
-newtype UpdateId = UpdateId { unUpdateId :: Integer } deriving ( Show )
-newtype UserId = UserId { unUserId :: Integer } deriving ( Show )
-newtype CallbackQueryId = CallbackQueryId { unCallbackQueryId :: String } deriving ( Show )
-newtype MessageId = MessageId { unMessageId :: Integer } deriving ( Show )
+newtype UpdateId = UpdateId { unUpdateId :: Integer } deriving ( Eq, Show )
+newtype UserId = UserId { unUserId :: Integer } deriving ( Eq, Show )
+newtype CallbackQueryId = CallbackQueryId { unCallbackQueryId :: String } deriving ( Eq, Show )
+newtype MessageId = MessageId { unMessageId :: Integer } deriving ( Eq, Show )
 
 data Update
    = Update
