@@ -8,7 +8,6 @@ import Data.Ini.Config ( parseIniFile )
 import qualified Telegram.Core as Tg
 import qualified Telegram.BotTypes as Tg
 import qualified Vk.Core as Vk
-import Logger ( Level(..) )
 import Config
 
 main :: IO ()
@@ -20,6 +19,6 @@ main = do
     Right config ->
       case (acApi config) of
         Telegram ->
-          Tg.runBot Debug (acTelegram config) (Tg.UpdateId 0)
+          Tg.runBot (acLogLevel config) (acTelegram config) (Tg.UpdateId 0)
         VK ->
-          Vk.runBot Debug (acVk config)
+          Vk.runBot (acLogLevel config) (acVk config)

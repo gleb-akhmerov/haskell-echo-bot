@@ -19,7 +19,7 @@ data Level
    | Info
    | Warning
    | Error
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Read)
 
 class Monad m => MonadLogger m where
   logLn :: Level -> String -> m ()

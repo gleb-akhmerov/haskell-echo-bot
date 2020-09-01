@@ -9,6 +9,7 @@ import qualified Vk.Api as Vk ( Token(..) )
 import Vk.Core ( VkConfig(..) )
 import Telegram.Core ( TelegramConfig(..) )
 import qualified Bot ( Config(..) )
+import Logger ( Level )
 
 data Api
   = Telegram
@@ -20,6 +21,7 @@ data AppConfig
        { acTelegram :: TelegramConfig
        , acVk :: VkConfig
        , acApi :: Api
+       , acLogLevel :: Level
        }
   deriving Show
 
@@ -40,4 +42,5 @@ configParser = do
     let vcBotConfig = botConfig
     return VkConfig {..}
   acApi <- section "Run" $ fieldOf "api" readable
+  acLogLevel <- section "Run" $ fieldOf "log_level" readable
   return AppConfig {..}
