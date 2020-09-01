@@ -88,3 +88,17 @@ spec = do
                    , CallbackQueryAnswer cqId
                    ]
 
+    it "should reply the requested number of times after a callback query" $ do
+      let cqId = BT.CallbackQueryId "123"
+          conversation = do
+            handleUpdate $ makeTextMessageUpdate userId (BT.MessageId 1) "Hello!"
+            handleUpdate $ makeCallbackQueryUpdate userId cqId 3
+            handleUpdate $ makeTextMessageUpdate userId (BT.MessageId 2) "Hello!"
+      runMock (runNoLoggingT (Bot.evalBotT conversation config))
+        `shouldBe` [ ForwardedMessage userId (BT.MessageId 1)
+                   , TextMessage userId "The messages will now be repeated 3 times."
+                   , CallbackQueryAnswer cqId
+                   , ForwardedMessage userId (BT.MessageId 2)
+                   , ForwardedMessage userId (BT.MessageId 2)
+                   , ForwardedMessage userId (BT.MessageId 2)
+                   ]
