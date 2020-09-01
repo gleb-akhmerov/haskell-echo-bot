@@ -4,6 +4,7 @@
 
 module Vk.Core where
 
+import Data.Function ( (&) )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad.IO.Class ( MonadIO )
 import Control.Monad ( replicateM_ )
@@ -71,5 +72,7 @@ startPolling = do
 
 runBot :: Level -> VkConfig -> IO ()
 runBot logLevel config =
-  let botConfig = vcBotConfig config
-  in runConsoleLoggerT (evalBotT (runReaderT startPolling config) botConfig) logLevel
+  startPolling
+  & flip runReaderT config
+  & flip evalBotT (vcBotConfig config)
+  & flip runConsoleLoggerT logLevel

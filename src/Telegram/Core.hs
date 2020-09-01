@@ -62,4 +62,7 @@ botLoop offset = do
 
 runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
 runBot logLevel (TelegramConfig { tcToken, tcBotConfig }) offset =
-  runApi (runConsoleLoggerT (evalBotT (botLoop offset) tcBotConfig) logLevel) tcToken
+  botLoop offset
+  & flip evalBotT tcBotConfig
+  & flip runConsoleLoggerT logLevel
+  & flip runApi tcToken
