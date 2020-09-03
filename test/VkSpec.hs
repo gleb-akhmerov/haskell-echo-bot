@@ -7,7 +7,7 @@ module VkSpec where
 import Test.Hspec
 import Control.Monad.Writer
 import Vk.Api
-import Vk.Core
+import Vk
 import qualified Vk.Types as Ts
 import qualified Bot
 import Logger

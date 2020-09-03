@@ -6,7 +6,7 @@ module Config where
 import Data.Ini.Config
 import qualified Telegram.Api as Tg ( Token(..) )
 import qualified Vk.Api as Vk ( Token(..) )
-import qualified Vk.Core as Vk ( Config(..) )
+import qualified Vk ( Config(..) )
 import qualified Bot ( Config(..) )
 import Logger ( Level )
 

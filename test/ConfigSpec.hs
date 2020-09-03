@@ -8,7 +8,7 @@ import NeatInterpolation
 import Data.Ini.Config ( parseIniFile )
 import qualified Bot ( Config(..) )
 import qualified Telegram.Api as Tg ( Token(..) )
-import qualified Vk.Core as Vk ( Config(..) )
+import qualified Vk ( Config(..) )
 import qualified Vk.Api as Vk ( Token(..) )
 import Config ( Config(..), Api(..), configParser )
 import Logger ( Level(..) )

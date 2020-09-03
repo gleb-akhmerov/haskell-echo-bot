@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Vk.Core where
+module Vk where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
