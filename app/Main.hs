@@ -17,8 +17,8 @@ main = do
     Left err ->
       putStrLn err
     Right config ->
-      case (acApi config) of
+      case (cApi config) of
         Telegram ->
-          Tg.runBot (acLogLevel config) (acTelegram config) (Tg.UpdateId 0)
+          Tg.runBot (cLogLevel config) (cBot config) (cTelegramToken config) (Tg.UpdateId 0)
         VK ->
-          Vk.runBot (acLogLevel config) (acVk config)
+          Vk.runBot (cLogLevel config) (cBot config) (cVk config)

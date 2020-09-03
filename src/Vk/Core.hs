@@ -6,18 +6,18 @@ module Vk.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Bot
+import qualified Bot ( Config )
+import Bot ( MonadBot, react, evalBotT, InMessage(..), OutMessage(..) )
 import Logger
 import Vk.Types
 import Vk.Api
 
-data VkConfig
-   = VkConfig
-       { vcToken :: Token
-       , vcGroupId :: Integer
-       , vcBotConfig :: Config
+data Config
+   = Config
+       { cToken :: Token
+       , cGroupId :: Integer
        }
-  deriving (Show)
+  deriving (Show, Eq)
 
 sendOutMessage :: (MonadApi m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
 sendOutMessage userId outMessage =
@@ -65,9 +65,9 @@ startPolling groupId = do
       botLoop lpsServer lpsKey lpsTs
   return ()
 
-runBot :: Level -> VkConfig -> IO ()
-runBot logLevel config =
-  startPolling (vcGroupId config)
-  & flip evalBotT (vcBotConfig config)
-  & flip runApiT (vcToken config)
+runBot :: Level -> Bot.Config -> Config -> IO ()
+runBot logLevel botConfig config =
+  startPolling (cGroupId config)
+  & flip evalBotT botConfig
+  & flip runApiT (cToken config)
   & flip runConsoleLoggerT logLevel

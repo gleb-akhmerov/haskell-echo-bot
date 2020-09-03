@@ -19,7 +19,7 @@ import Util ( requestQuery, verboseEitherDecode )
 import Vk.Types
 import Logger
 
-data Token = Token String deriving Show
+data Token = Token String deriving (Show, Eq)
 
 class Monad m => MonadApi m where
   getLongPollServer :: Integer -> m (Either String Response)

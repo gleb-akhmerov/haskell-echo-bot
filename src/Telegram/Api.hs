@@ -14,7 +14,7 @@ import Data.Aeson ( object, (.=), toJSONList )
 import Telegram.BotTypes
 import Util ( requestJSON, verboseEitherDecode )
 
-data Token = Token String deriving Show
+data Token = Token String deriving (Show, Eq)
 
 class Monad m => MonadApi m where
   getUpdates :: UpdateId -> m (Either String [Update])

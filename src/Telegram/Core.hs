@@ -6,17 +6,11 @@ module Telegram.Core where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )
-import Bot
+import Bot ( MonadBot, react, evalBotT, InMessage(..), OutMessage(..) )
+import qualified Bot ( Config )
 import Logger
 import Telegram.BotTypes
 import Telegram.Api
-
-data TelegramConfig
-   = TelegramConfig
-       { tcToken :: Token
-       , tcBotConfig :: Config
-       }
-  deriving (Show)
 
 sendOutMessage :: (MonadApi m, MonadLogger m) => UserId -> OutMessage MessageId -> m ()
 sendOutMessage userId outMessage = do
@@ -60,9 +54,9 @@ botLoop offset = do
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
       botLoop newOffset
 
-runBot :: Level -> TelegramConfig -> UpdateId -> IO ()
-runBot logLevel (TelegramConfig { tcToken, tcBotConfig }) offset =
+runBot :: Level -> Bot.Config -> Token -> UpdateId -> IO ()
+runBot logLevel botConfig token offset =
   botLoop offset
-  & flip evalBotT tcBotConfig
+  & flip evalBotT botConfig
   & flip runConsoleLoggerT logLevel
-  & flip runApi tcToken
+  & flip runApi token
