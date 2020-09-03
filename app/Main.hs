@@ -5,7 +5,7 @@ module Main where
 
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( parseIniFile )
-import qualified Telegram.Core as Tg
+import qualified Telegram as Tg
 import qualified Vk.Core as Vk
 import Config
 

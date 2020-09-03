@@ -2,7 +2,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Telegram.Core where
+module Telegram where
 
 import Data.Function ( (&) )
 import Control.Monad ( replicateM_ )

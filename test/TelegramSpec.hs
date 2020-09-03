@@ -7,7 +7,7 @@ module TelegramSpec where
 import Test.Hspec
 import Control.Monad.Writer
 import Telegram.Api
-import Telegram.Core
+import Telegram
 import qualified Telegram.BotTypes as BT
 import qualified Bot
 import Logger
