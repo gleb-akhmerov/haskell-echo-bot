@@ -58,5 +58,5 @@ runBot :: Level -> Bot.Config -> Token -> IO ()
 runBot logLevel botConfig token =
   botLoop (UpdateId 0)
   & flip evalBotT botConfig
+  & flip runApiT token
   & flip runConsoleLoggerT logLevel
-  & flip runApi token
