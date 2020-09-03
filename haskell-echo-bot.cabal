@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 76f5d2a02e965c5c0b85aa9d868336dcc1de72779b91622da7673fe179fff0c2
+-- hash: 3df57c326fa7255f5fb1cc188ee36680b856b1132005a53192b6ee34f376a486
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -49,7 +49,6 @@ library
     , bytestring
     , config-ini
     , either
-    , hspec
     , http-conduit
     , mtl
     , random
@@ -71,7 +70,6 @@ executable haskell-echo-bot-exe
     , config-ini
     , either
     , haskell-echo-bot
-    , hspec
     , http-conduit
     , mtl
     , random
