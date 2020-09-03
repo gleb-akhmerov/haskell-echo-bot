@@ -65,22 +65,22 @@ spec = do
     let userId = BT.UserId 123456789
     let messageId = BT.MessageId 42
 
-    it "should forward non-command text messages" $ do
+    it "forwards non-command text messages" $ do
       let update = makeTextMessageUpdate userId messageId "Hello!"
       runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
         `shouldBe` [ForwardedMessage userId messageId]
 
-    it "should send help text for /help command" $ do
+    it "sends the help text for /help command" $ do
       let update = makeTextMessageUpdate userId messageId "/help"
       runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
         `shouldBe` [TextMessage userId (Bot.helpText config)]
 
-    it "should send the keyboard for /repeat command" $ do
+    it "sends the keyboard for /repeat command" $ do
       let update = makeTextMessageUpdate userId messageId "/repeat"
       runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
         `shouldBe` [Keyboard userId (Bot.repeatKeyboardText config) [1,2,3,4,5]]
 
-    it "should reply to callback query" $ do
+    it "replies to callback query" $ do
       let cqId = BT.CallbackQueryId "123"
       let update = makeCallbackQueryUpdate userId cqId 3
       runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
@@ -88,7 +88,7 @@ spec = do
                    , CallbackQueryAnswer cqId
                    ]
 
-    it "should reply the requested number of times after a callback query" $ do
+    it "replies the requested number of times after a callback query" $ do
       let cqId = BT.CallbackQueryId "123"
           conversation = do
             handleUpdate $ makeTextMessageUpdate userId (BT.MessageId 1) "Hello!"
