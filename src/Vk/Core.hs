@@ -5,7 +5,6 @@
 module Vk.Core where
 
 import Data.Function ( (&) )
-import Control.Monad.Reader ( MonadReader, asks, runReaderT )
 import Control.Monad ( replicateM_ )
 import Bot
 import Logger
@@ -20,19 +19,18 @@ data VkConfig
        }
   deriving (Show)
 
-sendOutMessage :: (MonadApi m, MonadReader VkConfig m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
-sendOutMessage userId outMessage = do
-  token <- asks vcToken
+sendOutMessage :: (MonadApi m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
+sendOutMessage userId outMessage =
   case outMessage of
     SendText text ->
-      sendTextMessage token userId text
+      sendTextMessage userId text
     EchoTimes n messageId ->
-      replicateM_ n (forwardMessage token userId messageId)
+      replicateM_ n (forwardMessage userId messageId)
     SendKeyboard text buttons ->
-      sendKeyboard token userId text buttons
+      sendKeyboard userId text buttons
 
-handleUpdate :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => Update -> m ()
-handleUpdate (Update { uObject }) = do
+handleUpdate :: (MonadApi m, MonadBot Integer m, MonadLogger m) => Update -> m ()
+handleUpdate (Update { uObject }) =
   case uObject of
     Message { mId, mUserId, mText = "" } -> do
       outMessage <- react (InMediaMessage mId)
@@ -46,7 +44,7 @@ handleUpdate (Update { uObject }) = do
     UnknownObject ->
       return ()
 
-botLoop :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => String -> String -> String -> m ()
+botLoop :: (MonadApi m, MonadBot Integer m, MonadLogger m) => String -> String -> String -> m ()
 botLoop server key ts = do
   eitherUpdates <- getUpdates server key ts
   case eitherUpdates of
@@ -57,11 +55,9 @@ botLoop server key ts = do
       mapM_ handleUpdate rUpdates
       botLoop server key rTs
 
-startPolling :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => m ()
-startPolling = do
-  groupId <- asks vcGroupId
-  token <- asks vcToken
-  eitherResponse <- getLongPollServer token groupId
+startPolling :: (MonadApi m, MonadBot Integer m, MonadLogger m) => Integer -> m ()
+startPolling groupId = do
+  eitherResponse <- getLongPollServer groupId
   case eitherResponse of
     Left err ->
       logLn Error err
@@ -71,8 +67,7 @@ startPolling = do
 
 runBot :: Level -> VkConfig -> IO ()
 runBot logLevel config =
-  startPolling
-  & flip runReaderT config
+  startPolling (vcGroupId config)
   & flip evalBotT (vcBotConfig config)
-  & runApiT
+  & flip runApiT (vcToken config)
   & flip runConsoleLoggerT logLevel

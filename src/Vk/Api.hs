@@ -4,13 +4,12 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia #-}
 
 module Vk.Api where
 
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Identity
+import Control.Monad.Reader ( ReaderT, runReaderT, ask )
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import Data.Traversable ( for )
 import System.Random ( randomIO )
@@ -23,30 +22,33 @@ import Logger
 data Token = Token String deriving Show
 
 class Monad m => MonadApi m where
-  getLongPollServer :: Token -> Integer -> m (Either String Response)
+  getLongPollServer :: Integer -> m (Either String Response)
   getUpdates :: String -> String -> String -> m (Either String Result)
-  sendTextMessage :: Token -> Integer -> String -> m ()
-  sendKeyboard :: Token -> Integer -> String -> [Int] -> m ()
-  forwardMessage :: Token -> Integer -> Integer -> m ()
+  sendTextMessage :: Integer -> String -> m ()
+  sendKeyboard :: Integer -> String -> [Int] -> m ()
+  forwardMessage :: Integer -> Integer -> m ()
 
 instance {-# OVERLAPPABLE #-}
   ( Monad (t m)
   , MonadTrans t
   , MonadApi m
   ) => MonadApi (t m) where
-  getLongPollServer token groupId = lift (getLongPollServer token groupId)
+  getLongPollServer groupId = lift (getLongPollServer groupId)
   getUpdates server key ts = lift (getUpdates server key ts)
-  sendTextMessage token userId text = lift (sendTextMessage token userId text)
-  sendKeyboard token userId text buttons = lift (sendKeyboard token userId text buttons)
-  forwardMessage token userId messageId = lift (forwardMessage token userId messageId)
+  sendTextMessage userId text = lift (sendTextMessage userId text)
+  sendKeyboard userId text buttons = lift (sendKeyboard userId text buttons)
+  forwardMessage userId messageId = lift (forwardMessage userId messageId)
 
 newtype ApiT m a
-  = ApiT { runApiT :: m a }
-  deriving newtype (Functor, Applicative, Monad, MonadIO)
-  deriving MonadTrans via IdentityT
+  = ApiT { unApiT :: ReaderT String m a }
+  deriving newtype (Functor, Applicative, Monad, MonadTrans, MonadIO)
+
+runApiT :: ApiT m a -> Token -> m a
+runApiT (ApiT m) (Token token) = runReaderT m token
 
 instance (Monad m, MonadLogger m, MonadIO m) => MonadApi (ApiT m) where
-  getLongPollServer (Token token) groupId = do
+  getLongPollServer groupId = ApiT $ do
+    token <- ask
     response <- httpLBS $
       requestQuery
         "https://api.vk.com/method/groups.getLongPollServer"
@@ -56,7 +58,7 @@ instance (Monad m, MonadLogger m, MonadIO m) => MonadApi (ApiT m) where
         ]
     return $ verboseEitherDecode $ getResponseBody response
 
-  getUpdates server key ts = do
+  getUpdates server key ts = ApiT $ do
     response <- httpLBS $
       requestQuery
         server
@@ -69,7 +71,8 @@ instance (Monad m, MonadLogger m, MonadIO m) => MonadApi (ApiT m) where
     logLn Debug $ LBS.unpack $ getResponseBody response
     return $ verboseEitherDecode $ getResponseBody response
 
-  sendTextMessage (Token token) userId text = do
+  sendTextMessage userId text = ApiT $ do
+    token <- ask
     randomId <- liftIO (randomIO :: IO Int)
     _ <- httpLBS $
       requestQuery
@@ -82,7 +85,8 @@ instance (Monad m, MonadLogger m, MonadIO m) => MonadApi (ApiT m) where
         ]
     return ()
 
-  sendKeyboard (Token token) userId text buttons = do
+  sendKeyboard userId text buttons = ApiT $ do
+    token <- ask
     randomId <- liftIO (randomIO :: IO Int)
     _ <- httpLBS $
       requestQuery
@@ -105,7 +109,8 @@ instance (Monad m, MonadLogger m, MonadIO m) => MonadApi (ApiT m) where
         ]
     return ()
 
-  forwardMessage (Token token) userId messageId = do
+  forwardMessage userId messageId = ApiT $ do
+    token <- ask
     randomId <- liftIO (randomIO :: IO Int)
     _ <- httpLBS $
       requestQuery
