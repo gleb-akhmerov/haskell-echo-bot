@@ -6,7 +6,6 @@ module Vk.Core where
 
 import Data.Function ( (&) )
 import Control.Monad.Reader ( MonadReader, asks, runReaderT )
-import Control.Monad.IO.Class ( MonadIO )
 import Control.Monad ( replicateM_ )
 import Bot
 import Logger
@@ -21,7 +20,7 @@ data VkConfig
        }
   deriving (Show)
 
-sendOutMessage :: (MonadIO m, MonadReader VkConfig m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
+sendOutMessage :: (MonadApi m, MonadReader VkConfig m, MonadLogger m) => Integer -> OutMessage Integer -> m ()
 sendOutMessage userId outMessage = do
   token <- asks vcToken
   case outMessage of
@@ -32,7 +31,7 @@ sendOutMessage userId outMessage = do
     SendKeyboard text buttons ->
       sendKeyboard token userId text buttons
 
-handleUpdate :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => Update -> m ()
+handleUpdate :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => Update -> m ()
 handleUpdate (Update { uObject }) = do
   case uObject of
     Message { mId, mUserId, mText = "" } -> do
@@ -47,7 +46,7 @@ handleUpdate (Update { uObject }) = do
     UnknownObject ->
       return ()
 
-botLoop :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => String -> String -> String -> m ()
+botLoop :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => String -> String -> String -> m ()
 botLoop server key ts = do
   eitherUpdates <- getUpdates server key ts
   case eitherUpdates of
@@ -58,7 +57,7 @@ botLoop server key ts = do
       mapM_ handleUpdate rUpdates
       botLoop server key rTs
 
-startPolling :: (MonadIO m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => m ()
+startPolling :: (MonadApi m, MonadReader VkConfig m, MonadBot Integer m, MonadLogger m) => m ()
 startPolling = do
   groupId <- asks vcGroupId
   token <- asks vcToken
@@ -75,4 +74,5 @@ runBot logLevel config =
   startPolling
   & flip runReaderT config
   & flip evalBotT (vcBotConfig config)
+  & runApiT
   & flip runConsoleLoggerT logLevel
