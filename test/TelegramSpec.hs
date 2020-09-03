@@ -39,21 +39,21 @@ runMock (Mock m) = execWriter m
 makeTextMessageUpdate :: BT.UserId -> BT.MessageId -> String -> BT.Update
 makeTextMessageUpdate userId messageId text =
   BT.Update
-  { BT.uId = BT.UpdateId 9999
-  , BT.uUserId = userId
-  , BT.uEvent = BT.EventMessage
-                ( BT.MessageWithId
-                    messageId
-                    (BT.TextMessage { BT.tmText = text }))}
+    { BT.uId = BT.UpdateId 9999
+    , BT.uUserId = userId
+    , BT.uEvent = BT.EventMessage
+                    ( BT.MessageWithId
+                      messageId
+                      (BT.TextMessage { BT.tmText = text }))}
 
 makeCallbackQueryUpdate :: BT.UserId -> BT.CallbackQueryId -> Int -> BT.Update
 makeCallbackQueryUpdate userId cqId cqData =
   BT.Update
-  { BT.uId = BT.UpdateId 9999
-  , BT.uUserId = userId
-  , BT.uEvent = BT.CallbackQuery
-             { BT.cqId = cqId
-             , BT.cqData = cqData }}
+    { BT.uId = BT.UpdateId 9999
+    , BT.uUserId = userId
+    , BT.uEvent = BT.CallbackQuery
+                    { BT.cqId = cqId
+                    , BT.cqData = cqData }}
 
 spec :: Spec
 spec = do
