@@ -57,7 +57,7 @@ makeCallbackQueryUpdate userId cqId cqData =
 
 spec :: Spec
 spec = do
-  describe "Telegram.Api" $ do
+  describe "handleUpdate" $ do
     let config = Bot.Config { Bot.helpText = "Help text"
                             , Bot.repeatKeyboardText = "Repeat keyboard text"
                             , Bot.initialRepeats = 1

@@ -8,7 +8,7 @@ data Mes = Mes deriving (Show, Eq)
 
 spec :: Spec
 spec = do
-  describe "Bot.react" $ do
+  describe "react" $ do
     let config = Config { helpText = "Help text"
                         , repeatKeyboardText = "Repeat keyboard text"
                         , initialRepeats = 1
