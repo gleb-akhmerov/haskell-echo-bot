@@ -60,3 +60,4 @@ tests:
     dependencies:
     - haskell-echo-bot
     - hspec
+    - neat-interpolation

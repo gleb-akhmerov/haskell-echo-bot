@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3df57c326fa7255f5fb1cc188ee36680b856b1132005a53192b6ee34f376a486
+-- hash: a3ba467e1548ed304544ace7944169f51422583ee1298183a691b3356b68b8b7
 
 name:           haskell-echo-bot
 version:        0.1.0.0
@@ -82,6 +82,7 @@ test-suite haskell-echo-bot-test
   main-is: Spec.hs
   other-modules:
       BotSpec
+      ConfigSpec
       TelegramSpec
       TelegramTypesSpec
       VkParseSpec
@@ -99,6 +100,7 @@ test-suite haskell-echo-bot-test
     , hspec
     , http-conduit
     , mtl
+    , neat-interpolation
     , random
     , text
     , transformers
