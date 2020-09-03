@@ -45,6 +45,16 @@ makeTextMessageUpdate userId messageId text =
                      , Ts.mUserId = userId
                      , Ts.mPayload = Nothing }}
 
+makeKeyboardPressUpdate :: Integer -> Int -> Ts.Update
+makeKeyboardPressUpdate userId payload =
+  Ts.Update
+    { Ts.uType = "message_new"
+    , Ts.uObject = Ts.Message
+                     { Ts.mId = 42
+                     , Ts.mText = show payload
+                     , Ts.mUserId = userId
+                     , Ts.mPayload = Just payload }}
+
 spec :: Spec
 spec = do
   describe "handleUpdate" $ do
@@ -70,3 +80,21 @@ spec = do
       let update = makeTextMessageUpdate userId messageId "/repeat"
       runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
         `shouldBe` [Keyboard userId (Bot.repeatKeyboardText config) [1,2,3,4,5]]
+
+    it "replies to keyboard press" $ do
+      let update = makeKeyboardPressUpdate userId 3
+      runMock (runNoLoggingT (Bot.evalBotT (handleUpdate update) config))
+        `shouldBe` [TextMessage userId "The messages will now be repeated 3 times."]
+
+    it "replies the requested number of times after user pressed the keyboard" $ do
+      let conversation = do
+            handleUpdate $ makeTextMessageUpdate userId 1 "Hello!"
+            handleUpdate $ makeKeyboardPressUpdate userId 3
+            handleUpdate $ makeTextMessageUpdate userId 2 "Hello!"
+      runMock (runNoLoggingT (Bot.evalBotT conversation config))
+        `shouldBe` [ ForwardedMessage userId 1
+                   , TextMessage userId "The messages will now be repeated 3 times."
+                   , ForwardedMessage userId 2
+                   , ForwardedMessage userId 2
+                   , ForwardedMessage userId 2
+                   ]
