@@ -6,7 +6,6 @@ module Main where
 import qualified Data.Text.IO as T
 import Data.Ini.Config ( parseIniFile )
 import qualified Telegram.Core as Tg
-import qualified Telegram.BotTypes as Tg
 import qualified Vk.Core as Vk
 import Config
 
@@ -19,6 +18,6 @@ main = do
     Right config ->
       case (cApi config) of
         Telegram ->
-          Tg.runBot (cLogLevel config) (cBot config) (cTelegramToken config) (Tg.UpdateId 0)
+          Tg.runBot (cLogLevel config) (cBot config) (cTelegramToken config)
         VK ->
           Vk.runBot (cLogLevel config) (cBot config) (cVk config)

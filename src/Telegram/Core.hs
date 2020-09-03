@@ -54,9 +54,9 @@ botLoop offset = do
       let newOffset = updates & last & uId & unUpdateId & (+1) & UpdateId
       botLoop newOffset
 
-runBot :: Level -> Bot.Config -> Token -> UpdateId -> IO ()
-runBot logLevel botConfig token offset =
-  botLoop offset
+runBot :: Level -> Bot.Config -> Token -> IO ()
+runBot logLevel botConfig token =
+  botLoop (UpdateId 0)
   & flip evalBotT botConfig
   & flip runConsoleLoggerT logLevel
   & flip runApi token
