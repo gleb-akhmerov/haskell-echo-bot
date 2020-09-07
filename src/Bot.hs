@@ -50,9 +50,9 @@ instance MonadTrans BotT where
 
 instance (MonadLogger m, Show i) => MonadBot i (BotT m) where
   react inMessage = BotT $ do
+    logLn Info (show inMessage)
     config <- ask
-    logLn Debug (show inMessage)
-    case inMessage of
+    outMessage <- case inMessage of
       InMediaMessage message -> do
         repeats <- get
         return $ EchoTimes repeats message
@@ -68,6 +68,8 @@ instance (MonadLogger m, Show i) => MonadBot i (BotT m) where
       KeyboardKeyPushed n -> do
         put n
         return $ SendText $ "The messages will now be repeated " ++ show n ++ " times."
+    logLn Info (show outMessage)
+    return outMessage
 
 runBotT :: Monad m => BotT m a -> Config -> m (a, Int)
 runBotT (BotT m) config = runStateT (runReaderT m config) (initialRepeats config)
